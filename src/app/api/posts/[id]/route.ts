@@ -1,18 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import Post from "@/models/post";
 
-// Type for dynamic route params
-interface Params {
-  params: { id: string };
-}
-
 // GET: fetch a post by ID
-export async function GET(req: Request, { params }: Params) {
+export async function GET(req: NextRequest, context: { params: { id: string } }) {
   try {
     await dbConnect();
+    const { id } = context.params;
 
-    const post = await Post.findById(params.id);
+    const post = await Post.findById(id);
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
@@ -25,24 +21,19 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 // PUT: update a post by ID
-interface UpdatePostBody {
-  title?: string;
-  description?: string;
-  link?: string;
-}
-
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(req: NextRequest, context: { params: { id: string } }) {
   try {
     await dbConnect();
+    const { id } = context.params;
+    const body = (await req.json()) as {
+      title?: string;
+      description?: string;
+      link?: string;
+    };
 
-    const body: UpdatePostBody = await req.json();
     const updatedPost = await Post.findByIdAndUpdate(
-      params.id,
-      {
-        title: body.title,
-        description: body.description,
-        link: body.link,
-      },
+      id,
+      { title: body.title, description: body.description, link: body.link },
       { new: true }
     );
 
@@ -58,11 +49,12 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 // DELETE: delete a post by ID
-export async function DELETE(req: Request, { params }: Params) {
+export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
   try {
     await dbConnect();
+    const { id } = context.params;
 
-    const deletedPost = await Post.findByIdAndDelete(params.id);
+    const deletedPost = await Post.findByIdAndDelete(id);
     if (!deletedPost) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
