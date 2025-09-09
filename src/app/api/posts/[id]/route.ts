@@ -3,10 +3,13 @@ import { dbConnect } from "@/lib/mongodb";
 import Post from "@/models/post";
 
 // GET: fetch a post by ID
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await context.params;
     await dbConnect();
-    const { id } = context.params;
 
     const post = await Post.findById(id);
     if (!post) {
@@ -21,10 +24,13 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
 }
 
 // PUT: update a post by ID
-export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await context.params;
     await dbConnect();
-    const { id } = context.params;
     const body = (await req.json()) as {
       title?: string;
       description?: string;
@@ -49,10 +55,13 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
 }
 
 // DELETE: delete a post by ID
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await context.params;
     await dbConnect();
-    const { id } = context.params;
 
     const deletedPost = await Post.findByIdAndDelete(id);
     if (!deletedPost) {
@@ -65,3 +74,4 @@ export async function DELETE(req: NextRequest, context: { params: { id: string }
     return NextResponse.json({ error: "Failed to delete post" }, { status: 500 });
   }
 }
+
