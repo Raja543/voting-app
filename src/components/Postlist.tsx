@@ -166,9 +166,9 @@ export default function Postlist() {
       try {
         // Fetch all posts
         const res = await fetch("/api/posts");
-        const data: Post[] = Array.isArray(await res.json())
-          ? await res.json()
-          : [];
+        const rawData = await res.json();
+
+        const data: Post[] = Array.isArray(rawData) ? rawData : [];
 
         const postsWithId = data.map(post => ({
           ...post,
@@ -264,3 +264,4 @@ export default function Postlist() {
     </div>
   );
 }
+
