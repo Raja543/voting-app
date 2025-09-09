@@ -114,10 +114,12 @@ export async function POST(req: Request) {
 
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
+      alert("User not found.");
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     if (!user.isWhitelisted) {
+      alert("You are not whitelisted to vote.");
       return NextResponse.json({ error: "You are not whitelisted" }, { status: 403 });
     }
 
@@ -133,6 +135,7 @@ export async function POST(req: Request) {
 
     const existingVote = await Vote.findOne({ userEmail: session.user.email, postId: body.postId });
     if (existingVote) {
+      alert("You have already voted for this post.");
       return NextResponse.json({ error: "You have already voted for this post" }, { status: 403 });
     }
 
