@@ -43,7 +43,9 @@ export default function AdminPage() {
     if (status === "authenticated" && session?.user?.isAdmin) {
       fetch("/api/users")
         .then(res => res.json())
-        .then((data: any[]) => setUsers(data.map(u => ({ ...u, _id: u._id || u.id }))))
+        .then((data: User[]) =>
+          setUsers(data.map(u => ({ ...u, _id: u._id })))
+        )
         .catch(console.error);
 
       fetch("/api/posts")

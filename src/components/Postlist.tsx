@@ -13,6 +13,15 @@ interface Post {
   link?: string;
 }
 
+// API response type before transforming _id
+interface RawPost {
+  _id: string | { toString: () => string };
+  title: string;
+  description: string;
+  votes: number;
+  link?: string;
+}
+
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,12 +35,12 @@ export default function Home() {
       setLoading(true);
       try {
         const res = await fetch("/api/posts");
-        const data = await res.json();
+        const data: unknown = await res.json();
 
         const postsWithId: Post[] = Array.isArray(data)
-          ? data.map((p: any) => ({
+          ? (data as RawPost[]).map((p) => ({
               ...p,
-              _id: p._id?.toString() || "",
+              _id: typeof p._id === "string" ? p._id : p._id.toString(),
             }))
           : [];
 
@@ -44,7 +53,7 @@ export default function Home() {
       if (session?.user?.email) {
         try {
           const voteRes = await fetch("/api/votes");
-          const voteData = await voteRes.json();
+          const voteData: { hasVoted?: boolean } = await voteRes.json();
           setUserHasVoted(Boolean(voteData?.hasVoted));
         } catch (err) {
           console.error("Failed to check vote status:", err);
@@ -122,4 +131,3 @@ export default function Home() {
     </div>
   );
 }
-

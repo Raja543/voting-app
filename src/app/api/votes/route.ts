@@ -7,6 +7,11 @@ import Post from "@/models/post";
 import Vote from "@/models/vote";
 import { authOptions } from "../auth/[...nextauth]/route";
 
+// Define request body type
+interface VoteRequestBody {
+  postId: string;
+}
+
 // ✅ POST: cast a vote
 export async function POST(req: Request) {
   try {
@@ -27,9 +32,9 @@ export async function POST(req: Request) {
     }
 
     // Ensure body is parsed safely
-    let body: any = {};
+    let body: VoteRequestBody;
     try {
-      body = await req.json();
+      body = (await req.json()) as VoteRequestBody;
     } catch {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
@@ -58,7 +63,7 @@ export async function POST(req: Request) {
     await post.save();
 
     return NextResponse.json({ success: true, message: "Vote successful", post });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Vote error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -78,7 +83,7 @@ export async function GET() {
     const hasVoted = !!vote;
 
     return NextResponse.json({ hasVoted }, { status: 200 });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Vote check error:", error);
     return NextResponse.json({ hasVoted: false }, { status: 500 });
   }
