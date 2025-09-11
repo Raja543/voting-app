@@ -1,76 +1,85 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface VoteButtonProps {
   postId: string;
-  disabled?: boolean;
   onVoted?: () => void;
+  disabled?: boolean;
 }
 
-export default function VoteButton({
-  postId,
-  disabled = false,
-  onVoted,
-}: VoteButtonProps) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export default function VoteButton({ postId, onVoted, disabled }: VoteButtonProps) {
+  const [hasVoted, setHasVoted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [count, setCount] = useState<number>(0);
 
+  // ✅ Load vote status + count ONCE
+  useEffect(() => {
+    const fetchVotes = async () => {
+      try {
+        const res = await fetch(`/api/votes?postId=${postId}`);
+        const data = await res.json();
+        setCount(data.count || 0);
+        setHasVoted(data.hasVoted || false);
+      } catch (err) {
+        console.error("Error fetching votes:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVotes();
+  }, [postId]);
+
+  // ✅ Handle vote
   const handleVote = async () => {
-    if (disabled || loading) return;
-
-    setLoading(true);
-    setError(null);
+    if (hasVoted || disabled) return;
 
     try {
+      setSubmitting(true);
       const res = await fetch("/api/votes", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ postId }),
       });
-
       const data = await res.json();
 
-      if (!res.ok) {
-        // Handle different error cases
-        if (res.status === 401 || data?.error === "Not logged in") {
-          alert("Please log in first to vote.");
-        } else if (res.status === 403 && data?.error === "You are not whitelisted") {
-          alert("You are not whitelisted to vote.");
-        } else if (res.status === 403 && data?.error === "You have already voted for this post") {
-          alert("🗳️ You can vote only once per post.");
-        } else {
-          setError(data?.error || "Vote failed");
-        }
-
-        setLoading(false);
-        return;
+      if (res.ok) {
+        setHasVoted(true);
+        setCount((prev) => prev + 1);
+        onVoted?.();
+      } else {
+        alert(data.error || "Error voting");
       }
-
-      // ✅ Success
-      onVoted?.();
     } catch (err) {
       console.error("Vote error:", err);
-      setError("Vote failed");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <button disabled className="px-4 py-2 bg-gray-400 rounded">
+        Loading...
+      </button>
+    );
+  }
+
   return (
-    <button
-      onClick={handleVote}
-      disabled={disabled || loading}
-      className={`px-4 py-2 rounded-xl font-semibold transition-colors ${
-        disabled || loading
-          ? "bg-gray-600 cursor-not-allowed"
-          : "bg-blue-600 hover:bg-blue-500"
-      }`}
-    >
-      {loading ? "Voting..." : "Vote"}
-      {error && <span className="text-red-400 ml-2 text-sm">{error}</span>}
-    </button>
+    <div className="flex items-center gap-3">
+      <button
+        onClick={handleVote}
+        disabled={hasVoted || submitting || disabled}
+        className={`px-4 py-2 rounded ${
+          hasVoted
+            ? "bg-gray-500 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700 text-white"
+        }`}
+      >
+        {hasVoted ? "Already Voted" : submitting ? "Voting..." : "Vote"}
+      </button>
+    </div>
   );
 }

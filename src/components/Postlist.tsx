@@ -13,73 +13,44 @@ interface Post {
   link?: string;
 }
 
-interface VoteStatusResponse {
-  hasVoted: boolean;
-}
-
 export default function Postlist() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userHasVoted, setUserHasVoted] = useState(false);
 
   const { data: session } = useSession();
 
-  // Fetch posts + vote status
+  // Fetch posts
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchPosts = async () => {
       setLoading(true);
-
       try {
-        // Fetch all posts
         const res = await fetch("/api/posts");
-        const rawData = await res.json();
-
-        const data: Post[] = Array.isArray(rawData) ? rawData : [];
-
-        const postsWithId = data.map(post => ({
-          ...post,
-          _id: post._id.toString(),
-        }));
-
-        setPosts(postsWithId);
+        const data: Post[] = await res.json();
+        setPosts(data.map(post => ({ ...post, _id: post._id.toString() })));
       } catch (err) {
         console.error("Failed to fetch posts:", err);
         setPosts([]);
+      } finally {
+        setLoading(false);
       }
-
-      // Fetch vote status if logged in
-      if (session?.user?.email) {
-        try {
-          const voteRes = await fetch("/api/votes");
-          const voteData: VoteStatusResponse = await voteRes.json();
-          setUserHasVoted(Boolean(voteData.hasVoted));
-        } catch (err) {
-          console.error("Failed to check vote status:", err);
-        }
-      }
-
-      setLoading(false);
     };
 
-    fetchData();
-  }, [session]);
+    fetchPosts();
+  }, []);
 
-  // Update post votes after voting
+  // Update post votes in parent state
   const handleVoteSuccess = (postId: string) => {
     setPosts(prev =>
       prev.map(post =>
         post._id === postId ? { ...post, votes: post.votes + 1 } : post
       )
     );
-    setUserHasVoted(true);
   };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-      {/* Navbar */}
       <Navbar session={session} showHomeHeading={true} />
 
-      {/* Main Content */}
       <div className="flex-1 w-full max-w-7xl mx-auto px-4 lg:px-6 py-10">
         {loading ? (
           <p className="text-gray-400 text-center">Loading posts...</p>
@@ -116,7 +87,6 @@ export default function Postlist() {
                   <VoteButton
                     postId={post._id}
                     onVoted={() => handleVoteSuccess(post._id)}
-                    disabled={userHasVoted}
                   />
                   <span className="text-gray-400 text-sm font-medium">
                     👍 {post.votes}
@@ -130,4 +100,3 @@ export default function Postlist() {
     </div>
   );
 }
-

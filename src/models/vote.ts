@@ -1,14 +1,22 @@
-import { Schema, model, models } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-const VoteSchema = new Schema(
+export interface IVote extends Document {
+  userId: string; // email or user _id
+  postId: string; // post they voted for
+  createdAt: Date;
+}
+
+const voteSchema = new Schema<IVote>(
   {
-    userEmail: { type: String, required: true }, // user email
-    postId: { type: Schema.Types.ObjectId, ref: "Post", required: true },
+    userId: { type: String, required: true },
+    postId: { type: String, required: true },
   },
   { timestamps: true }
 );
 
-// Ensure one vote per user per post
-VoteSchema.index({ userEmail: 1, postId: 1 }, { unique: true });
+// ✅ Ensure a user can only vote ONCE overall
+voteSchema.index({ userId: 1 }, { unique: true });
 
-export default models.Vote || model("Vote", VoteSchema);
+const Vote = mongoose.models.Vote || mongoose.model<IVote>("Vote", voteSchema);
+
+export default Vote;
