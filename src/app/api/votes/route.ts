@@ -1,70 +1,90 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { dbConnect } from "@/lib/mongodb";
-import Vote from "@/models/vote";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { dbConnect } from '@/lib/mongodb';
+import Vote from '@/models/vote';
+import User from '@/models/user';
+import Post from '@/models/post';
+import { authOptions } from '../auth/[...nextauth]/route';
 
-// ✅ Cast a vote
 export async function POST(req: Request) {
   await dbConnect();
 
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+      return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
     }
 
     const { postId } = await req.json();
     if (!postId) {
-      return NextResponse.json({ error: "Post ID is required" }, { status: 400 });
+      return NextResponse.json({ error: 'postId is required' }, { status: 400 });
     }
 
-    // ✅ Check if user already voted
-    const existingVote = await Vote.findOne({ userId: session.user.email });
-    if (existingVote) {
+    // Check if user is whitelisted
+    const user = await User.findOne({ email: session.user.email });
+    if (!user?.isWhitelisted) {
       return NextResponse.json(
-        { error: "You can only vote once overall" },
+        { error: 'You need to be whitelisted by admin to vote.' },
         { status: 403 }
       );
     }
 
-    // ✅ Save new vote
-    await Vote.create({
-      userId: session.user.email,
-      postId,
-    });
+    // Check if user already voted for this post
+    const existingVote = await Vote.findOne({ userId: session.user.email, postId });
+    if (existingVote) {
+      return NextResponse.json(
+        { error: 'You have already voted for this post.' },
+        { status: 403 }
+      );
+    }
+
+    // Limit user to 2 votes total
+    const voteCount = await Vote.countDocuments({ userId: session.user.email });
+    if (voteCount >= 2) {
+      return NextResponse.json(
+        { error: 'You can only vote for up to 2 posts.' },
+        { status: 403 }
+      );
+    }
+
+    // Record the vote
+    await Vote.create({ userId: session.user.email, postId });
+
+    // Update vote count in posts
+    const totalVotes = await Vote.countDocuments({ postId });
+    await Post.findByIdAndUpdate(postId, { votes: totalVotes });
 
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("Vote API error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  } catch (error) {
+    console.error('Vote API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// ✅ Check vote status OR get post vote count
 export async function GET(req: Request) {
   await dbConnect();
 
   try {
-    const { searchParams } = new URL(req.url);
-    const postId = searchParams.get("postId");
-
-    // 🔹 If postId is passed → return count
-    if (postId) {
-      const count = await Vote.countDocuments({ postId });
-      return NextResponse.json({ count }, { status: 200 });
+    const url = new URL(req.url);
+    const postId = url.searchParams.get('postId');
+    if (!postId) {
+      return NextResponse.json({ error: 'postId query parameter is required' }, { status: 400 });
     }
 
-    // 🔹 Else check user status
+    // Get total votes for post
+    const votesCount = await Vote.countDocuments({ postId });
+
+    // Check if current user has voted on this post
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ hasVoted: false }, { status: 200 });
+    let hasVoted = false;
+    if (session?.user?.email) {
+      const vote = await Vote.findOne({ postId, userId: session.user.email });
+      hasVoted = !!vote;
     }
 
-    const vote = await Vote.findOne({ userId: session.user.email });
-    return NextResponse.json({ hasVoted: !!vote }, { status: 200 });
+    return NextResponse.json({ count: votesCount, hasVoted });
   } catch (error) {
-    console.error("Vote check error:", error);
-    return NextResponse.json({ hasVoted: false }, { status: 500 });
+    console.error('Vote API GET error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

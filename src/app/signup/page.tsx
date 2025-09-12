@@ -1,13 +1,13 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react"; // ✅ added this
+import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 
 export default function SignupPage() {
-  const { data: session, status } = useSession(); // ✅ fixed
+  const { data: session, status } = useSession();
   const router = useRouter();
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +45,6 @@ export default function SignupPage() {
       });
 
       const data = await res.json();
-
       if (data.error) {
         setError(data.error);
       } else {
@@ -58,74 +57,71 @@ export default function SignupPage() {
 
   return (
     <>
-      {/* ✅ Navbar now receives session + loading just like login.tsx */}
-      <Navbar session={session} loading={status === "loading"} />
-
-      <div className="flex min-h-screen items-center justify-center bg-gray-900 px-4">
-        <div className="w-full max-w-md rounded-2xl bg-gray-800 p-8 shadow-xl border border-gray-700">
-          <h2 className="mb-6 text-center text-2xl font-bold text-white">
-            Create an Account
-          </h2>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
+      {/* ✅ Pass session and loading status properly */}
+      <Navbar 
+        session={session} 
+        loading={status === "loading"} 
+      />
+      
+      <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-gray-800 rounded-lg shadow-lg p-8 border border-gray-700">
+          <h1 className="text-2xl font-bold text-center mb-6 text-green-400">Sign Up</h1>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-300">
-                Name
-              </label>
+              <label className="block text-sm font-medium mb-2">Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
+                className="w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
                 required
-                className="w-full rounded-lg bg-gray-700 text-white border border-gray-600 px-3 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
-
+            
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-300">
-                Email
-              </label>
+              <label className="block text-sm font-medium mb-2">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                className="w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
                 required
-                className="w-full rounded-lg bg-gray-700 text-white border border-gray-600 px-3 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
-
+            
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-300">
-                Password
-              </label>
+              <label className="block text-sm font-medium mb-2">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                className="w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
                 required
-                className="w-full rounded-lg bg-gray-700 text-white border border-gray-600 px-3 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
 
-            {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+            {error && (
+              <div className="text-red-400 text-sm text-center">{error}</div>
+            )}
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-green-600 px-4 py-2 font-semibold text-white transition duration-200 hover:bg-green-700 disabled:bg-gray-500"
+              disabled={status === "loading"}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold transition"
             >
-              Sign Up
+              {status === "loading" ? "Creating Account..." : "Sign Up"}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-400">
-            Already have an account?{" "}
-            <a href="/login" className="font-medium text-green-400 hover:underline">
-              Login
-            </a>
-          </p>
+          <div className="mt-6 text-center">
+            <p className="text-gray-400">
+              Already have an account?{" "}
+              <a href="/login" className="text-green-400 hover:text-green-300 transition">
+                Login
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </>
