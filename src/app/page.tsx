@@ -1,7 +1,8 @@
 import dynamic from "next/dynamic";
 
-// Lazy load Postlist component to reduce initial bundle size
+// Lazy load Postlist component with loading fallback
 const Postlist = dynamic(() => import("@/components/Postlist"), {
+  ssr: true,
   loading: () => (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
@@ -12,9 +13,6 @@ const Postlist = dynamic(() => import("@/components/Postlist"), {
       </div>
     </div>
   ),
-  ssr: true,
-  // Optimize loading
-  suspense: true,
 });
 
 export default function HomePage() {
