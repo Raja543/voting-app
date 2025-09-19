@@ -30,6 +30,9 @@ export default function AdminPage() {
   const [newPost, setNewPost] = useState({ title: "", description: "", link: "" });
   const [postSearch, setPostSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [isVotingActive, setIsVotingActive] = useState(false);
+  const [currentPeriod, setCurrentPeriod] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Redirect logic (type-safe)
   useEffect(() => {
@@ -55,10 +58,10 @@ export default function AdminPage() {
       .then((data: User[]) => setUsers(data.map((u) => ({ ...u, _id: u._id }))))
       .catch(console.error);
 
-    // Fetch posts with synced vote counts
+    // Fetch posts with synced vote counts (admin sees only active posts)
     const fetchPostsWithVotes = async () => {
       try {
-        const postsRes = await fetch("/api/posts");
+        const postsRes = await fetch("/api/posts?showAll=true&showClosed=false");
         const postsData = await postsRes.json();
 
         const postsWithSyncedVotes = await Promise.all(
@@ -81,7 +84,22 @@ export default function AdminPage() {
     };
 
     fetchPostsWithVotes();
+    
+    // Fetch voting status
+    fetchVotingStatus();
   }, [status, session]);
+
+  // Fetch voting status
+  const fetchVotingStatus = async () => {
+    try {
+      const response = await fetch("/api/voting-status");
+      const data = await response.json();
+      setIsVotingActive(data.isVotingActive);
+      setCurrentPeriod(data.currentPeriod);
+    } catch (err) {
+      console.error("Failed to fetch voting status:", err);
+    }
+  };
 
   // Whitelist a user
   const whitelistUser = async (email: string) => {
@@ -149,6 +167,62 @@ export default function AdminPage() {
       setPosts((prev) => prev.filter((p) => p._id !== id));
     } catch (err) {
       console.error("Delete post error:", err);
+    }
+  };
+
+  // Start voting
+  const startVoting = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch("/api/voting-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "start" }),
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert(`Voting started successfully!`);
+        fetchVotingStatus();
+        window.location.reload();
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (err) {
+      console.error("Start voting error:", err);
+      alert("Failed to start voting. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Stop voting and generate results
+  const stopVoting = async () => {
+    if (!confirm("Are you sure you want to close voting? This will hide all posts from users and generate results.")) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const res = await fetch("/api/voting-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "stop" }),
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert(`Voting closed successfully! Results have been generated and posts are now hidden from users.`);
+        fetchVotingStatus();
+        window.location.reload();
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (err) {
+      console.error("Stop voting error:", err);
+      alert("Failed to stop voting. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -222,6 +296,58 @@ export default function AdminPage() {
                 ➕ Add Post
               </button>
             </form>
+          </div>
+
+          {/* Voting Control Section */}
+          <div className="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
+            <h2 className="text-xl font-semibold mb-4 text-purple-400">
+              Voting Control
+            </h2>
+            <div className="space-y-4">
+              <div className="bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-300">Current Status:</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    isVotingActive 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-red-100 text-red-800"
+                  }`}>
+                    {isVotingActive ? "🟢 Voting Active" : "🔴 Voting Inactive"}
+                  </span>
+                </div>
+                {currentPeriod && (
+                  <div className="text-sm text-gray-400">
+                    Period: <span className="text-blue-400 font-medium">{currentPeriod}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={startVoting}
+                  disabled={isLoading || isVotingActive}
+                  className={`flex-1 px-4 py-3 rounded-lg font-semibold transition ${
+                    isLoading || isVotingActive
+                      ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                      : "bg-green-600 hover:bg-green-700 text-white"
+                  }`}
+                >
+                  {isLoading ? "Loading..." : "▶️ Start Voting"}
+                </button>
+                
+                <button
+                  onClick={stopVoting}
+                  disabled={isLoading || !isVotingActive}
+                  className={`flex-1 px-4 py-3 rounded-lg font-semibold transition ${
+                    isLoading || !isVotingActive
+                      ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                      : "bg-red-600 hover:bg-red-700 text-white"
+                  }`}
+                >
+                  {isLoading ? "Loading..." : "⏹️ Close Voting"}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Users */}
@@ -339,6 +465,7 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
     </>
   );
 }

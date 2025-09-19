@@ -34,3 +34,42 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Voting Results System
+
+This application includes a comprehensive voting results system that allows administrators to close voting periods and generate detailed results tables.
+
+### Features
+
+- **Close Voting**: Admins can close voting for a specific period (e.g., "August 2024")
+- **Automatic Results Generation**: When voting is closed, the system automatically generates a ranked results table
+- **Results Display**: Beautiful table showing:
+  - Rank (with special styling for top 3 positions)
+  - Author information (name and email)
+  - Post title and description
+  - Link (if provided)
+  - Total vote count
+- **Historical Results**: View results from previous voting periods
+- **Responsive Design**: Works on desktop and mobile devices
+
+### How to Use
+
+1. **As Admin**: Navigate to the admin page (`/admin`)
+2. **Close Voting**: 
+   - Enter a voting period name (e.g., "August 2024")
+   - Click "🔒 Close Voting" button
+   - The system will generate and save results automatically
+3. **View Results**: 
+   - Results will be displayed immediately after closing
+   - Use "View Previous Results" section to see historical data
+4. **Results Table**: Shows posts ranked by vote count in descending order
+
+### Technical Details
+
+- **Database**: Results are stored in MongoDB using the `VotingResult` model
+- **API Endpoints**: 
+  - `POST /api/voting-results` - Close voting and generate results
+  - `GET /api/voting-results?period=<period>` - Get results for specific period
+  - `GET /api/voting-periods` - Get all available voting periods
+- **Components**: `VotingResults` component handles the results display
+- **Security**: All admin functions require admin authentication

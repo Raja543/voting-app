@@ -1,55 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { useSession } from "next-auth/react";
 
 interface VoteButtonProps {
   postId: string;
+  hasVoted?: boolean;
+  userTotalVotes?: number;
   onVoted?: () => void;
   disabled?: boolean;
 }
 
-export default function VoteButton({ postId, onVoted, disabled }: VoteButtonProps) {
+const VoteButton = memo(function VoteButton({ postId, hasVoted: initialHasVoted, userTotalVotes: initialUserTotalVotes, onVoted, disabled }: VoteButtonProps) {
   const { data: session } = useSession();
   
-  const [hasVoted, setHasVoted] = useState(false);
-  const [userTotalVotes, setUserTotalVotes] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [hasVoted, setHasVoted] = useState(initialHasVoted || false);
+  const [userTotalVotes, setUserTotalVotes] = useState(initialUserTotalVotes || 0);
   const [submitting, setSubmitting] = useState(false);
 
-  // ✅ Refetch vote status when postId OR user session changes
+  // Update state when props change
   useEffect(() => {
-    if (!postId) return;
-
-    // Reset state when user or post changes
-    setHasVoted(false);
-    setUserTotalVotes(0);
-    setLoading(true);
-
-    const fetchVoteStatus = async () => {
-      if (!session?.user?.email) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/votes?postId=${postId}`);
-        if (!res.ok) {
-          throw new Error(`Failed to fetch vote status: ${res.status}`);
-        }
-        
-        const data = await res.json();
-        setHasVoted(data.hasVoted || false);
-        setUserTotalVotes(data.userTotalVotes || 0);
-      } catch (err) {
-        console.error("Error fetching vote status:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchVoteStatus();
-  }, [postId, session?.user?.email]); // ✅ Added session dependency
+    setHasVoted(initialHasVoted || false);
+    setUserTotalVotes(initialUserTotalVotes || 0);
+  }, [initialHasVoted, initialUserTotalVotes]);
 
   const handleVote = async () => {
     if (hasVoted || disabled || submitting) return;
@@ -84,13 +57,6 @@ export default function VoteButton({ postId, onVoted, disabled }: VoteButtonProp
     }
   };
 
-  if (loading) {
-    return (
-      <button disabled className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed">
-        Loading...
-      </button>
-    );
-  }
 
   if (!session?.user?.email) {
     return (
@@ -128,4 +94,6 @@ export default function VoteButton({ postId, onVoted, disabled }: VoteButtonProp
       {buttonText}
     </button>
   );
-}
+});
+
+export default VoteButton;

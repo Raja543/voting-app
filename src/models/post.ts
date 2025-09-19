@@ -7,6 +7,8 @@ const postSchema = new Schema(
     description: { type: String, required: true },
     link: { type: String },
     votes: { type: Number, default: 0 },
+    votingPeriod: { type: String, required: true }, // e.g., "August 2025"
+    isVotingClosed: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

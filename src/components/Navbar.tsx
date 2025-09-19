@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, memo } from "react";
 
 interface NavbarProps {
   session?: import("next-auth").Session | null;
@@ -11,7 +11,7 @@ interface NavbarProps {
   showHomeHeading?: boolean;
 }
 
-export default function Navbar({
+const Navbar = memo(function Navbar({
   session,
   loading,
   showAdminHeading,
@@ -50,6 +50,20 @@ export default function Navbar({
             <span className="text-gray-300">
               Hello, {displayName} {isAdmin ? "(Admin)" : ""}
             </span>
+            <Link
+              href="/results"
+              className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium text-white transition"
+            >
+              📊 Results
+            </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-medium text-white transition"
+              >
+                ⚙️ Admin
+              </Link>
+            )}
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
               className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium text-white transition"
@@ -104,6 +118,24 @@ export default function Navbar({
                   </span>
                 </li>
                 <li>
+                  <Link
+                    href="/results"
+                    className="block bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium text-white mx-2"
+                  >
+                    📊 Results
+                  </Link>
+                </li>
+                {isAdmin && (
+                  <li>
+                    <Link
+                      href="/admin"
+                      className="block bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-medium text-white mx-2"
+                    >
+                      ⚙️ Admin
+                    </Link>
+                  </li>
+                )}
+                <li>
                   <button
                     onClick={() => signOut({ callbackUrl: "/" })}
                     className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium text-white mx-2 w-[calc(100%-1rem)]"
@@ -137,4 +169,6 @@ export default function Navbar({
       )}
     </nav>
   );
-}
+});
+
+export default Navbar;

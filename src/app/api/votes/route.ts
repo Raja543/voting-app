@@ -67,6 +67,32 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const postId = url.searchParams.get('postId');
+    const allPosts = url.searchParams.get('allPosts') === 'true';
+
+    const session = await getServerSession(authOptions);
+
+    if (allPosts) {
+      // Get vote status for all posts (optimized for multiple posts)
+      if (!session?.user?.email) {
+        return NextResponse.json({ userTotalVotes: 0, voteStatus: {} });
+      }
+
+      // Get all user votes in one query
+      const userVotes = await Vote.find({ userId: session.user.email });
+      const userTotalVotes = userVotes.length;
+      
+      // Create a map of postId -> hasVoted
+      const voteStatus: Record<string, boolean> = {};
+      userVotes.forEach(vote => {
+        voteStatus[vote.postId] = true;
+      });
+
+      const response = NextResponse.json({ userTotalVotes, voteStatus });
+      response.headers.set('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=30');
+      return response;
+    }
+
+    // Single post query (keep existing logic for backward compatibility)
     if (!postId) {
       return NextResponse.json({ error: 'postId query parameter is required' }, { status: 400 });
     }
@@ -75,7 +101,6 @@ export async function GET(req: Request) {
     const votesCount = await Vote.countDocuments({ postId });
 
     // Check if current user has voted on this post
-    const session = await getServerSession(authOptions);
     let hasVoted = false;
     if (session?.user?.email) {
       const vote = await Vote.findOne({ postId, userId: session.user.email });
