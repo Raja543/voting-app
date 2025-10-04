@@ -119,7 +119,7 @@ const Postlist = memo(function Postlist() {
 
   return (
     <>
-      <Navbar session={session} loading={status === "loading"} showHomeHeading={true} />
+      <Navbar />
 
       <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
         <div className="max-w-7xl mx-auto">
