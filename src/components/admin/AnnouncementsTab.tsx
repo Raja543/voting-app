@@ -1,5 +1,6 @@
 "use client";
 
+
 interface Announcement {
   _id: string;
   title: string;
@@ -10,18 +11,25 @@ interface Announcement {
   createdAt: string;
 }
 
+interface NewAnnouncement {
+  title: string;
+  content: string;
+  priority: "low" | "medium" | "high";
+}
+
 interface AnnouncementsTabProps {
-  announcements: Announcement[];
-  newAnnouncement: { title: string; content: string; priority: "low" | "medium" | "high" };
-  setNewAnnouncement: (announcement: { title: string; content: string; priority: "low" | "medium" | "high" }) => void;
-  addAnnouncement: (e: React.FormEvent) => void;
+  announcements?: Announcement[];
+  newAnnouncement: NewAnnouncement;
+  setNewAnnouncement: (announcement: NewAnnouncement) => void;
+  addAnnouncement: (e: React.FormEvent<HTMLFormElement>) => void;
   deleteAnnouncement: (id: string) => void;
   announcementSearch: string;
   setAnnouncementSearch: (search: string) => void;
 }
 
+
 export default function AnnouncementsTab({
-  announcements,
+  announcements = [],
   newAnnouncement,
   setNewAnnouncement,
   addAnnouncement,
@@ -29,10 +37,13 @@ export default function AnnouncementsTab({
   announcementSearch,
   setAnnouncementSearch,
 }: AnnouncementsTabProps) {
-  const filteredAnnouncements = announcements.filter(announcement => 
-    announcement.title.toLowerCase().includes(announcementSearch.toLowerCase()) ||
-    announcement.content.toLowerCase().includes(announcementSearch.toLowerCase())
-  );
+  // Defensive: filter only if announcements is an array
+  const filteredAnnouncements = Array.isArray(announcements)
+    ? announcements.filter(announcement =>
+        (announcement.title || "").toLowerCase().includes(announcementSearch.toLowerCase()) ||
+        (announcement.content || "").toLowerCase().includes(announcementSearch.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="space-y-6">
@@ -44,13 +55,13 @@ export default function AnnouncementsTab({
             type="text"
             placeholder="Announcement Title"
             value={newAnnouncement.title}
-            onChange={(e) => setNewAnnouncement(prev => ({ ...prev, title: e.target.value }))}
+            onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
             required
             className="w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
           />
           <select
             value={newAnnouncement.priority}
-            onChange={(e) => setNewAnnouncement(prev => ({ ...prev, priority: e.target.value as "low" | "medium" | "high" }))}
+            onChange={(e) => setNewAnnouncement({ ...newAnnouncement, priority: e.target.value as "low" | "medium" | "high" })}
             className="w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
           >
             <option value="low">🟢 Low Priority</option>
@@ -60,7 +71,7 @@ export default function AnnouncementsTab({
           <textarea
             placeholder="Announcement Content"
             value={newAnnouncement.content}
-            onChange={(e) => setNewAnnouncement(prev => ({ ...prev, content: e.target.value }))}
+            onChange={(e) => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })}
             required
             className="w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
             rows={4}
@@ -87,40 +98,44 @@ export default function AnnouncementsTab({
           />
         </div>
         <div className="max-h-96 overflow-y-auto">
-          {filteredAnnouncements.map((announcement) => (
-            <div key={announcement._id} className="p-4 border-b border-gray-700 last:border-b-0">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-lg text-blue-400">{announcement.title}</h3>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      announcement.priority === "high" ? "bg-red-100 text-red-800" :
-                      announcement.priority === "medium" ? "bg-yellow-100 text-yellow-800" :
-                      "bg-green-100 text-green-800"
-                    }`}>
-                      {announcement.priority.toUpperCase()}
-                    </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      announcement.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                    }`}>
-                      {announcement.isActive ? "ACTIVE" : "INACTIVE"}
-                    </span>
+          {filteredAnnouncements.length === 0 ? (
+            <div className="p-4 text-gray-400">No announcements found.</div>
+          ) : (
+            filteredAnnouncements.map((announcement) => (
+              <div key={announcement._id} className="p-4 border-b border-gray-700 last:border-b-0">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-lg text-blue-400">{announcement.title}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        announcement.priority === "high" ? "bg-red-100 text-red-800" :
+                        announcement.priority === "medium" ? "bg-yellow-100 text-yellow-800" :
+                        "bg-green-100 text-green-800"
+                      }`}>
+                        {announcement.priority.toUpperCase()}
+                      </span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        announcement.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                      }`}>
+                        {announcement.isActive ? "ACTIVE" : "INACTIVE"}
+                      </span>
+                    </div>
+                    <p className="text-gray-300 mb-2 whitespace-pre-wrap">{announcement.content}</p>
+                    <div className="text-sm text-gray-400">
+                      <span>By {announcement.createdBy}</span>
+                      <span className="ml-4">📅 {announcement.createdAt ? new Date(announcement.createdAt).toLocaleDateString() : ""}</span>
+                    </div>
                   </div>
-                  <p className="text-gray-300 mb-2 whitespace-pre-wrap">{announcement.content}</p>
-                  <div className="text-sm text-gray-400">
-                    <span>By {announcement.createdBy}</span>
-                    <span className="ml-4">📅 {new Date(announcement.createdAt).toLocaleDateString()}</span>
-                  </div>
+                  <button
+                    onClick={() => deleteAnnouncement(announcement._id)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md font-semibold"
+                  >
+                    Delete
+                  </button>
                 </div>
-                <button
-                  onClick={() => deleteAnnouncement(announcement._id)}
-                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md font-semibold"
-                >
-                  Delete
-                </button>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
