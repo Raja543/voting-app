@@ -1,28 +1,34 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-   eslint: {
+  eslint: {
     ignoreDuringBuilds: true,
   },
+
   // Performance optimizations
   experimental: {
     optimizePackageImports: ['next-auth', 'react', 'react-dom'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+  },
+
+  // Turbopack configuration (replaces experimental.turbo)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
     },
   },
+
   // Enable compression
   compress: true,
+
   // Optimize images
   images: {
     formats: ['image/webp', 'image/avif'],
   },
-  // Webpack optimizations for better minification
+
+  // Webpack optimizations for better minification & splitting
   webpack: (config, { dev, isServer }) => {
     if (!dev && !isServer) {
       // Optimize bundle splitting
@@ -42,17 +48,13 @@ const nextConfig: NextConfig = {
           },
         },
       };
-      
-      // Better minification
+
+      // Ensure a minimizer exists
       config.optimization.minimizer = config.optimization.minimizer || [];
     }
-    
+
     return config;
   },
-  // Enable SWC minification
-  swcMinify: true,
-  // Optimize CSS
-  cssModules: true,
 };
 
 export default nextConfig;

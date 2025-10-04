@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import React from "react";
 import ClientLayout from "./clientlayout";
 import "../styles/globals.css";
@@ -6,13 +6,16 @@ import "../styles/globals.css";
 export const metadata: Metadata = {
   title: "Voting App",
   description: "A simple voting app with Next.js, NextAuth, and MongoDB",
-  // Performance optimizations
-  viewport: "width=device-width, initial-scale=1",
   robots: "index, follow",
   // Preload critical resources
   other: {
     "preload": "/api/posts",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
