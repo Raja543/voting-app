@@ -5,7 +5,7 @@ import VotingStatus from "@/models/votingStatus";
 import Post from "@/models/post";
 import Vote from "@/models/vote";
 import VotingResult from "@/models/votingResults";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "../auth/[...nextauth]/authOptions";
 
 // GET: Get current voting status
 export async function GET() {

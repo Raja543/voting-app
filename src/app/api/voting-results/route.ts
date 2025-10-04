@@ -5,7 +5,7 @@ import Post from "@/models/post";
 import Vote from "@/models/vote";
 import User from "@/models/user";
 import VotingResult from "@/models/votingResults";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "../auth/[...nextauth]/authOptions";
 
 // POST: Close voting and generate results
 export async function POST(req: Request) {

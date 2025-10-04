@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { dbConnect } from "@/lib/mongodb";
 import VotingResult from "@/models/votingResults";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "../auth/[...nextauth]/authOptions";
 
 // GET: Retrieve all available voting periods (accessible to all users)
 export async function GET() {

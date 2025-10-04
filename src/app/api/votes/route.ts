@@ -4,7 +4,7 @@ import { dbConnect } from '@/lib/mongodb';
 import Vote from '@/models/vote';
 import User from '@/models/user';
 import Post from '@/models/post';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '../auth/[...nextauth]/authOptions';
 
 export async function POST(req: Request) {
   await dbConnect();

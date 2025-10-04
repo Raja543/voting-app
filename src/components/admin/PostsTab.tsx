@@ -11,7 +11,7 @@ interface Post {
 interface PostsTabProps {
   posts: Post[];
   newPost: { title: string; description: string; link: string };
-  setNewPost: (post: { title: string; description: string; link: string }) => void;
+  setNewPost: React.Dispatch<React.SetStateAction<{ title: string; description: string; link: string }>>;
   addPost: (e: React.FormEvent) => void;
   deletePost: (id: string) => void;
   postSearch: string;
@@ -52,14 +52,14 @@ export default function PostsTab({
               type="text"
               placeholder="Post Title"
               value={newPost.title}
-              onChange={(e) => setNewPost(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) => setNewPost((prev: { title: string; description: string; link: string }) => ({ ...prev, title: e.target.value }))}
               required
               className="w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
             />
             <textarea
               placeholder="Post Description"
               value={newPost.description}
-              onChange={(e) => setNewPost(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) => setNewPost((prev: { title: string; description: string; link: string }) => ({ ...prev, description: e.target.value }))}
               required
               className="w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
               rows={3}
@@ -68,7 +68,7 @@ export default function PostsTab({
               type="url"
               placeholder="Optional Link"
               value={newPost.link}
-              onChange={(e) => setNewPost(prev => ({ ...prev, link: e.target.value }))}
+              onChange={(e) => setNewPost((prev: { title: string; description: string; link: string }) => ({ ...prev, link: e.target.value }))}
               className="w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
             />
             <button

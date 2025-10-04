@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { dbConnect } from "@/lib/mongodb";
 import Vote from "@/models/vote";
 import Post from "@/models/post";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "../auth/[...nextauth]/authOptions";
 
 // ✅ Sync all post vote counts with actual Vote collection data (Admin only)
 export async function POST() {

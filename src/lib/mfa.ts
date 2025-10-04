@@ -1,5 +1,6 @@
+
 import speakeasy from 'speakeasy';
-import QRCode from 'qrcode';
+const QRCode = require('qrcode');
 import crypto from 'crypto';
 
 export class MFA {
@@ -17,20 +18,28 @@ export class MFA {
   }
 
   static async generateQRCodeDataUrl(otpauthUrl: string): Promise<string> {
-    try {
-      return await QRCode.toDataURL(otpauthUrl, {
-        errorCorrectionLevel: 'M',
-        type: 'image/png',
-        quality: 0.92,
-        margin: 1,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
+    return new Promise<string>((resolve, reject) => {
+      QRCode.toDataURL(
+        otpauthUrl,
+        {
+          errorCorrectionLevel: 'M',
+          type: 'image/png',
+          quality: 0.92,
+          margin: 1,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        },
+        (err: any, url: any) => {
+          if (err || !url) {
+            reject(new Error('Failed to generate QR code'));
+          } else {
+            resolve(url);
+          }
         }
-      });
-    } catch (error) {
-      throw new Error('Failed to generate QR code');
-    }
+      );
+    });
   }
 
   static verifyToken(token: string, secret: string): boolean {
