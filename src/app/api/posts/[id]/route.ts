@@ -2,15 +2,15 @@ import { NextResponse, NextRequest } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import Post from "@/models/post";
 
-
 // GET: fetch a post by ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     await dbConnect();
-    const post = await Post.findById(params.id);
+    const post = await Post.findById(id);
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
@@ -24,20 +24,23 @@ export async function GET(
 // PUT: update a post by ID
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     await dbConnect();
-    const body = (await req.json()) as {
-      title?: string;
-      description?: string;
-      link?: string;
-    };
+    const body = await req.json();
+
     const updatedPost = await Post.findByIdAndUpdate(
-      params.id,
-      { title: body.title, description: body.description, link: body.link },
+      id,
+      {
+        title: body.title,
+        description: body.description,
+        link: body.link,
+      },
       { new: true }
     );
+
     if (!updatedPost) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
@@ -51,11 +54,12 @@ export async function PUT(
 // DELETE: delete a post by ID
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     await dbConnect();
-    const deletedPost = await Post.findByIdAndDelete(params.id);
+    const deletedPost = await Post.findByIdAndDelete(id);
     if (!deletedPost) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
@@ -65,4 +69,3 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete post" }, { status: 500 });
   }
 }
-
