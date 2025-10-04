@@ -6,11 +6,11 @@ import Asset from "@/models/asset";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } 
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -18,8 +18,11 @@ export async function PUT(
     const { title, description, gdriveLink, type, category } = await request.json();
 
     await dbConnect();
+
+    const { id } = await context.params;
+
     const asset = await Asset.findByIdAndUpdate(
-      params.id,
+      id,
       { title, description, gdriveLink, type, category },
       { new: true }
     );
@@ -37,17 +40,20 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } 
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await dbConnect();
-    const asset = await Asset.findByIdAndDelete(params.id);
+
+    const { id } = await context.params;
+
+    const asset = await Asset.findByIdAndDelete(id);
 
     if (!asset) {
       return NextResponse.json({ error: "Asset not found" }, { status: 404 });
