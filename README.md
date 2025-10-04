@@ -1,75 +1,149 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Voting App
+
+A full-featured voting platform built with Next.js, NextAuth, MongoDB, and Tailwind CSS. This app supports user authentication, content submission, voting, admin management, and more.
+
+---
+
+## Features
+
+### 1. User Authentication
+- **Sign Up & Login:**
+  - Users can register with email/password or sign in with Google or Twitter OAuth.
+  - Secure password hashing with bcryptjs.
+- **Multi-Factor Authentication (MFA):**
+  - Optional MFA setup using TOTP (Google Authenticator compatible).
+  - Backup codes for account recovery.
+- **Session Management:**
+  - JWT-based sessions for secure, stateless authentication.
+
+### 2. User Profile
+- **Profile Page:**
+  - View and edit user details (name, email, username, profile image).
+  - See voting status and admin/whitelist status.
+
+### 3. Content Submission
+- **Submit Content:**
+  - Authenticated users can submit posts for voting (title, description, optional link).
+  - Submissions are reviewed by admins before being published.
+- **View Submissions:**
+  - Users can view their own submissions and their status.
+
+### 4. Voting System
+- **Voting Periods:**
+  - Admins can start/stop voting periods.
+  - Only one voting period is active at a time.
+- **Vote on Posts:**
+  - Users can vote on published posts during active voting periods.
+  - Each user can vote once per post per period.
+- **Sync Votes:**
+  - Admins can trigger a sync to recalculate vote counts from the database.
+
+### 5. Results & Announcements
+- **Voting Results:**
+  - View results for each voting period, including post rankings and vote counts.
+- **Announcements:**
+  - Admins can post announcements visible to all users.
+
+### 6. Townhall Recordings & Assets
+- **Townhall Recordings:**
+  - Admins can upload and manage video/audio recordings of townhalls.
+  - Users can view and play recordings.
+- **Assets:**
+  - Admins can upload and manage files/assets for the community.
+  - Users can view/download assets.
+
+### 7. Admin Dashboard
+- **Tabs for Management:**
+  - Announcements, Assets, Posts, Submissions, Recordings, Users.
+- **User Management:**
+  - View all users, whitelist, promote to admin, or remove users.
+  - View user details in a modal.
+- **Moderation:**
+  - Approve/reject content submissions.
+  - Delete posts, assets, announcements, and recordings.
+
+### 8. Security & Best Practices
+- **Role-based Access:**
+  - Admin-only routes and actions are protected on both client and server.
+- **API Routes:**
+  - All sensitive actions are performed via secure API routes with session checks.
+- **Rate Limiting & Validation:**
+  - Input validation and error handling throughout the app.
+
+### 9. UI/UX
+- **Modern UI:**
+  - Built with Tailwind CSS for a responsive, accessible, and visually appealing interface.
+- **Dark Mode:**
+  - Default dark theme for all pages.
+- **Loading States:**
+  - Spinners and disabled buttons during async actions.
+- **Notifications:**
+  - Success/error messages for user actions.
+
+---
 
 ## Getting Started
 
-First, run the development server:
+1. **Install dependencies:**
+   ```sh
+   npm install
+   ```
+2. **Set up environment variables:**
+   - Copy `.env.example` to `.env.local` and fill in MongoDB, NextAuth, and OAuth credentials.
+3. **Run the development server:**
+   ```sh
+   npm run dev
+   ```
+4. **Build for production:**
+   ```sh
+   npm run build
+   npm start
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Folder Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `src/app/` — App directory (Next.js routes, layouts, pages, API routes)
+- `src/components/` — React components (UI, admin, shared)
+- `src/models/` — Mongoose models for MongoDB collections
+- `src/lib/` — Utility libraries (MFA, session, MongoDB connection)
+- `src/styles/` — Global CSS (Tailwind)
+- `src/types/` — TypeScript types
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## API Endpoints
 
-To learn more about Next.js, take a look at the following resources:
+- `/api/auth/[...nextauth]` — Authentication (NextAuth.js)
+- `/api/posts` — CRUD for posts
+- `/api/votes` — Voting actions
+- `/api/voting-periods` — Manage voting periods
+- `/api/voting-results` — Get voting results
+- `/api/announcements` — Announcements CRUD
+- `/api/assets` — Asset management
+- `/api/townhall-recordings` — Recordings management
+- `/api/users` — User management
+- `/api/content-submissions` — Content submission and moderation
+- `/api/sync-votes` — Admin vote sync
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Technologies Used
+- Next.js (App Router)
+- React 19+
+- MongoDB & Mongoose
+- NextAuth.js
+- Tailwind CSS v3
+- PostCSS & Autoprefixer
+- TypeScript
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
+Pull requests are welcome! Please open an issue first to discuss any major changes.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
 
-## Voting Results System
-
-This application includes a comprehensive voting results system that allows administrators to close voting periods and generate detailed results tables.
-
-### Features
-
-- **Close Voting**: Admins can close voting for a specific period (e.g., "August 2024")
-- **Automatic Results Generation**: When voting is closed, the system automatically generates a ranked results table
-- **Results Display**: Beautiful table showing:
-  - Rank (with special styling for top 3 positions)
-  - Author information (name and email)
-  - Post title and description
-  - Link (if provided)
-  - Total vote count
-- **Historical Results**: View results from previous voting periods
-- **Responsive Design**: Works on desktop and mobile devices
-
-### How to Use
-
-1. **As Admin**: Navigate to the admin page (`/admin`)
-2. **Close Voting**: 
-   - Enter a voting period name (e.g., "August 2024")
-   - Click "🔒 Close Voting" button
-   - The system will generate and save results automatically
-3. **View Results**: 
-   - Results will be displayed immediately after closing
-   - Use "View Previous Results" section to see historical data
-4. **Results Table**: Shows posts ranked by vote count in descending order
-
-### Technical Details
-
-- **Database**: Results are stored in MongoDB using the `VotingResult` model
-- **API Endpoints**: 
-  - `POST /api/voting-results` - Close voting and generate results
-  - `GET /api/voting-results?period=<period>` - Get results for specific period
-  - `GET /api/voting-periods` - Get all available voting periods
-- **Components**: `VotingResults` component handles the results display
-- **Security**: All admin functions require admin authentication
+## License
+MIT
