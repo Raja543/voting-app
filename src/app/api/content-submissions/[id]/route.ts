@@ -6,11 +6,11 @@ import ContentSubmission from "@/models/contentSubmission";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } 
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -18,8 +18,11 @@ export async function PUT(
     const { status, adminNotes } = await request.json();
 
     await dbConnect();
+
+    const { id } = await context.params; 
+
     const submission = await ContentSubmission.findByIdAndUpdate(
-      params.id,
+      id,
       { status, adminNotes },
       { new: true }
     );
@@ -31,23 +34,29 @@ export async function PUT(
     return NextResponse.json(submission);
   } catch (error) {
     console.error("Error updating content submission:", error);
-    return NextResponse.json({ error: "Failed to update submission" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update submission" },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await dbConnect();
-    const submission = await ContentSubmission.findByIdAndDelete(params.id);
+
+    const { id } = await context.params; 
+
+    const submission = await ContentSubmission.findByIdAndDelete(id);
 
     if (!submission) {
       return NextResponse.json({ error: "Submission not found" }, { status: 404 });
@@ -56,6 +65,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting content submission:", error);
-    return NextResponse.json({ error: "Failed to delete submission" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete submission" },
+      { status: 500 }
+    );
   }
 }

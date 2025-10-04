@@ -6,63 +6,88 @@ import TownhallRecording from "@/models/townhallRecording";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ✅ updated type
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, gdriveLink, recordingDate, thumbnailUrl, duration } = await request.json();
+    const {
+      title,
+      description,
+      gdriveLink,
+      recordingDate,
+      thumbnailUrl,
+      duration,
+    } = await request.json();
 
     await dbConnect();
+
+    const { id } = await context.params; // ✅ await params
+
     const recording = await TownhallRecording.findByIdAndUpdate(
-      params.id,
-      { 
-        title, 
-        description, 
-        gdriveLink, 
+      id,
+      {
+        title,
+        description,
+        gdriveLink,
         recordingDate: recordingDate ? new Date(recordingDate) : undefined,
-        thumbnailUrl, 
-        duration 
+        thumbnailUrl,
+        duration,
       },
       { new: true }
     );
 
     if (!recording) {
-      return NextResponse.json({ error: "Recording not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Recording not found" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(recording);
   } catch (error) {
     console.error("Error updating townhall recording:", error);
-    return NextResponse.json({ error: "Failed to update recording" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update recording" },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ✅ updated type
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await dbConnect();
-    const recording = await TownhallRecording.findByIdAndDelete(params.id);
+
+    const { id } = await context.params; // ✅ await params
+
+    const recording = await TownhallRecording.findByIdAndDelete(id);
 
     if (!recording) {
-      return NextResponse.json({ error: "Recording not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Recording not found" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting townhall recording:", error);
-    return NextResponse.json({ error: "Failed to delete recording" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete recording" },
+      { status: 500 }
+    );
   }
 }
