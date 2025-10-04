@@ -25,8 +25,6 @@ A full-featured voting platform built with Next.js, NextAuth, MongoDB, and Tailw
 - **Submit Content:**
   - Authenticated users can submit posts for voting (title, description, optional link).
   - Submissions are reviewed by admins before being published.
-- **View Submissions:**
-  - Users can view their own submissions and their status.
 
 ### 4. Voting System
 - **Voting Periods:**
@@ -36,7 +34,7 @@ A full-featured voting platform built with Next.js, NextAuth, MongoDB, and Tailw
   - Users can vote on published posts during active voting periods.
   - Each user can vote once per post per period.
 - **Sync Votes:**
-  - Admins can trigger a sync to recalculate vote counts from the database.
+  - After admin close voting, it will automatically published the results.
 
 ### 5. Results & Announcements
 - **Voting Results:**
