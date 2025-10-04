@@ -6,7 +6,7 @@ import Announcement from "@/models/announcement";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // changed here
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,8 +18,9 @@ export async function PUT(
     const { title, content, priority, isActive } = await request.json();
 
     await dbConnect();
+    const { id } = await context.params; // await params
     const announcement = await Announcement.findByIdAndUpdate(
-      params.id,
+      id,
       { title, content, priority, isActive },
       { new: true }
     );
@@ -37,7 +38,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // changed here
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -47,7 +48,8 @@ export async function DELETE(
     }
 
     await dbConnect();
-    const announcement = await Announcement.findByIdAndDelete(params.id);
+    const { id } = await context.params; // await params
+    const announcement = await Announcement.findByIdAndDelete(id);
 
     if (!announcement) {
       return NextResponse.json({ error: "Announcement not found" }, { status: 404 });
