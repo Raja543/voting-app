@@ -102,7 +102,7 @@ export default function ResultsPage() {
 
   return (
     <>
-      <Navbar session={session} />
+      <Navbar />
       
       <div className="min-h-screen bg-gray-900 text-gray-100">
         <div className="container mx-auto px-4 py-8">
