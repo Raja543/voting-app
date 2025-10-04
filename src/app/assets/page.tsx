@@ -18,51 +18,36 @@ interface Asset {
 export default function AssetsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [assets, setAssets] = useState<Asset[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
   const [filter, setFilter] = useState<"all" | "image" | "video" | "banner">("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [assetsError, setAssetsError] = useState<string>("");
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.isWhitelisted) return;
+    fetch("/api/assets")
+      .then(res => res.ok ? res.json() : Promise.reject("Failed to fetch assets"))
+      .then(data => setAssets(data || []))
+      .catch(() => setAssetsError("Failed to load assets."));
+  }, [status, session]);
 
   useEffect(() => {
     if (status === "loading") return;
-
     if (status === "unauthenticated") {
       router.replace("/login");
       return;
     }
-
     if (status === "authenticated" && session?.user && !session.user.isWhitelisted) {
       router.replace("/");
     }
   }, [status, session, router]);
 
   useEffect(() => {
-    if (status !== "authenticated" || !session?.user?.isWhitelisted) return;
-
-    const fetchAssets = async () => {
-      try {
-        const response = await fetch("/api/assets");
-        const data = await response.json();
-        setAssets(data);
-        setFilteredAssets(data);
-      } catch (error) {
-        console.error("Error fetching assets:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAssets();
-  }, [status, session]);
-
-  useEffect(() => {
     let filtered = assets;
-
     if (filter !== "all") {
       filtered = filtered.filter(asset => asset.type === filter);
     }
-
     if (searchTerm) {
       filtered = filtered.filter(asset =>
         asset.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,16 +55,11 @@ export default function AssetsPage() {
         (asset.category && asset.category.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
-
     setFilteredAssets(filtered);
   }, [assets, filter, searchTerm]);
 
-  if (status === "loading" || isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
+  if (status === "loading") {
+    return null;
   }
 
   if (status === "unauthenticated" || !session?.user?.isWhitelisted) {
@@ -107,14 +87,12 @@ export default function AssetsPage() {
   return (
     <>
       <Navbar showHomeHeading={false} />
-      
       <div className="min-h-screen bg-gray-900 text-gray-100 pt-20">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-white mb-4">📁 Assets Library</h1>
             <p className="text-gray-400 text-lg">Access images, videos, and banners for your content creation</p>
           </div>
-
           {/* Filters and Search */}
           <div className="bg-gray-800 rounded-lg p-6 mb-8 border border-gray-700">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -160,7 +138,6 @@ export default function AssetsPage() {
                   🎨 Banners
                 </button>
               </div>
-              
               <input
                 type="text"
                 placeholder="Search assets..."
@@ -170,7 +147,6 @@ export default function AssetsPage() {
               />
             </div>
           </div>
-
           {/* Assets Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredAssets.map((asset) => (
@@ -190,17 +166,14 @@ export default function AssetsPage() {
                     {asset.type.charAt(0).toUpperCase() + asset.type.slice(1)}
                   </span>
                 </div>
-
                 <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">
                   {asset.title}
                 </h3>
-
                 {asset.description && (
                   <p className="text-gray-400 text-sm mb-3 line-clamp-3">
                     {asset.description}
                   </p>
                 )}
-
                 {asset.category && (
                   <div className="mb-3">
                     <span className="text-xs text-gray-500 bg-gray-700 px-2 py-1 rounded">
@@ -208,7 +181,6 @@ export default function AssetsPage() {
                     </span>
                   </div>
                 )}
-
                 <a
                   href={asset.gdriveLink}
                   target="_blank"
@@ -220,7 +192,6 @@ export default function AssetsPage() {
               </div>
             ))}
           </div>
-
           {filteredAssets.length === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📁</div>

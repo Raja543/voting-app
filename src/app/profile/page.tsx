@@ -28,6 +28,14 @@ interface UserProfile {
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileError, setProfileError] = useState<string>("");
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.email) return;
+    fetch("/api/users/profile")
+      .then(res => res.ok ? res.json() : Promise.reject("Failed to fetch profile"))
+      .then(data => setProfile(data.user || null))
+      .catch(() => setProfileError("Failed to load profile."));
+  }, [status, session]);
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -45,52 +53,31 @@ export default function ProfilePage() {
     newPassword: "",
     confirmPassword: "",
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      setLoading(false);
-      return;
+    if (profile) {
+      setFormData({
+        name: profile.name || "",
+        username: profile.username || "",
+        bio: profile.bio || "",
+        walletAddress: profile.walletAddress || "",
+        website: profile.website || "",
+        location: profile.location || "",
+        socialLinks: {
+          twitter: profile.socialLinks?.twitter || "",
+          github: profile.socialLinks?.github || "",
+          linkedin: profile.socialLinks?.linkedin || "",
+          discord: profile.socialLinks?.discord || "",
+        },
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     }
-    if (session?.user?.email) {
-      fetchProfile();
-    }
-  }, [session, status]);
-
-  async function fetchProfile() {
-    try {
-      const res = await fetch("/api/users/profile", { method: "GET" });
-      if (!res.ok) throw new Error("Failed to fetch profile");
-      const data = await res.json();
-      if (data.user) {
-        setProfile(data.user);
-        setFormData({
-          name: data.user.name || "",
-          username: data.user.username || "",
-          bio: data.user.bio || "",
-          walletAddress: data.user.walletAddress || "",
-          website: data.user.website || "",
-          location: data.user.location || "",
-          socialLinks: {
-            twitter: data.user.socialLinks?.twitter || "",
-            github: data.user.socialLinks?.github || "",
-            linkedin: data.user.socialLinks?.linkedin || "",
-            discord: data.user.socialLinks?.discord || "",
-          },
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-      }
-    } catch {
-      setError("Failed to load profile.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [profile]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -143,7 +130,6 @@ export default function ProfilePage() {
 
       if (res.ok && data.success) {
         setSuccess("Profile updated successfully.");
-        setProfile(data.user);
         setFormData(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
       } else {
         setError(data.error || "Failed to update profile.");
@@ -155,15 +141,8 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading || status === "loading") {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-          <p>Loading profile...</p>
-        </div>
-      </>
-    );
+  if (status === "loading") {
+    return null;
   }
 
   if (!session) {

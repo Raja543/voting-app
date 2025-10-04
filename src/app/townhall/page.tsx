@@ -19,80 +19,63 @@ interface TownhallRecording {
 export default function TownhallPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [recordings, setRecordings] = useState<TownhallRecording[]>([]);
   const [filteredRecordings, setFilteredRecordings] = useState<TownhallRecording[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+
+  const [recordings, setRecordings] = useState<TownhallRecording[]>([]);
+  const [recordingsError, setRecordingsError] = useState<string>("");
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.isWhitelisted) return;
+    fetch("/api/townhall-recordings")
+      .then(res => res.ok ? res.json() : Promise.reject("Failed to fetch recordings"))
+      .then(data => setRecordings(data || []))
+      .catch(() => setRecordingsError("Failed to load recordings."));
+  }, [status, session]);
 
   useEffect(() => {
     if (status === "loading") return;
-
     if (status === "unauthenticated") {
       router.replace("/login");
       return;
     }
-
     if (status === "authenticated" && session?.user && !session.user.isWhitelisted) {
       router.replace("/");
     }
   }, [status, session, router]);
 
   useEffect(() => {
-    if (status !== "authenticated" || !session?.user?.isWhitelisted) return;
-
-    const fetchRecordings = async () => {
-      try {
-        const response = await fetch("/api/townhall-recordings");
-        const data = await response.json();
-        setRecordings(data);
-        setFilteredRecordings(data);
-      } catch (error) {
-        console.error("Error fetching recordings:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRecordings();
-  }, [status, session]);
-
-  useEffect(() => {
     let filtered = recordings;
-
     if (selectedYear !== "all") {
       filtered = filtered.filter(recording => {
         const date = new Date(recording.recordingDate);
         return date.getFullYear().toString() === selectedYear;
       });
     }
-
     if (selectedMonth !== "all") {
       filtered = filtered.filter(recording => {
         const date = new Date(recording.recordingDate);
         return (date.getMonth() + 1).toString() === selectedMonth;
       });
     }
-
     if (searchTerm) {
       filtered = filtered.filter(recording =>
         recording.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (recording.description && recording.description.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
-
     setFilteredRecordings(filtered);
   }, [recordings, selectedYear, selectedMonth, searchTerm]);
 
   const getAvailableYears = () => {
-    const years = new Set(recordings.map(recording => new Date(recording.recordingDate).getFullYear()));
-    return Array.from(years).sort((a, b) => b - a);
+  const years = new Set((recordings ?? []).map(recording => new Date(recording.recordingDate).getFullYear()));
+  return Array.from(years).sort((a, b) => b - a);
   };
 
   const getAvailableMonths = () => {
-    const months = new Set(recordings.map(recording => new Date(recording.recordingDate).getMonth() + 1));
-    return Array.from(months).sort((a, b) => b - a);
+  const months = new Set((recordings ?? []).map(recording => new Date(recording.recordingDate).getMonth() + 1));
+  return Array.from(months).sort((a, b) => b - a);
   };
 
   const formatDate = (dateString: string) => {
@@ -112,12 +95,8 @@ export default function TownhallPage() {
     return months[monthNumber - 1];
   };
 
-  if (status === "loading" || isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
+  if (status === "loading") {
+    return null;
   }
 
   if (status === "unauthenticated" || !session?.user?.isWhitelisted) {

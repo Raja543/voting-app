@@ -19,38 +19,25 @@ export default function AnnouncementsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [announcementsError, setAnnouncementsError] = useState<string>("");
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.isWhitelisted) return;
+    fetch("/api/announcements")
+      .then(res => res.ok ? res.json() : Promise.reject("Failed to fetch announcements"))
+      .then(data => setAnnouncements(data || []))
+      .catch(() => setAnnouncementsError("Failed to load announcements."));
+  }, [status, session]);
 
   useEffect(() => {
     if (status === "loading") return;
-
     if (status === "unauthenticated") {
       router.replace("/login");
       return;
     }
-
     if (status === "authenticated" && session?.user && !session.user.isWhitelisted) {
       router.replace("/");
     }
   }, [status, session, router]);
-
-  useEffect(() => {
-    if (status !== "authenticated" || !session?.user?.isWhitelisted) return;
-
-    const fetchAnnouncements = async () => {
-      try {
-        const response = await fetch("/api/announcements");
-        const data = await response.json();
-        setAnnouncements(data);
-      } catch (error) {
-        console.error("Error fetching announcements:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAnnouncements();
-  }, [status, session]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -81,12 +68,8 @@ export default function AnnouncementsPage() {
     });
   };
 
-  if (status === "loading" || isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
+  if (status === "loading") {
+    return null;
   }
 
   if (status === "unauthenticated" || !session?.user?.isWhitelisted) {
@@ -106,9 +89,9 @@ export default function AnnouncementsPage() {
 
           {/* Announcements List */}
           <div className="max-w-4xl mx-auto">
-            {announcements.length > 0 ? (
+            {(announcements?.length ?? 0) > 0 ? (
               <div className="space-y-6">
-                {announcements.map((announcement) => (
+                {(announcements ?? []).map((announcement) => (
                   <div
                     key={announcement._id}
                     className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-all duration-200"

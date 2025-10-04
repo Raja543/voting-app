@@ -129,13 +129,10 @@ const Postlist = memo(function Postlist() {
           
           <VotingCountdown />
 
-          {loading ? (
-            <div className="text-center py-16">
-              <div className="animate-spin rounded-full h-14 w-14 border-b-2 border-blue-500 mx-auto mb-6" />
-              <p className="text-xl text-gray-300">Loading posts...</p>
-            </div>
-          ) : !isVotingActive ? (
+          {!isVotingActive ? (
             // When voting is inactive, don't show "No posts available" or voting tip
+            null
+          ) : loading ? (
             null
           ) : memoizedPosts.length === 0 ? (
             <div className="text-center py-16">

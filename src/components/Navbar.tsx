@@ -41,12 +41,7 @@ export default function Navbar({
 
       {/* Right: Desktop Actions */}
       <div className="hidden md:flex gap-4 items-center">
-        {status === "loading" ? (
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-gray-400">Loading...</span>
-          </div>
-        ) : session?.user ? (
+        {session?.user ? (
           <>
             <div className="flex items-center space-x-3">
               {session.user.image && (
@@ -154,31 +149,8 @@ export default function Navbar({
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="absolute right-0 top-full w-64 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg py-2 md:hidden z-50">
-          {status === "loading" ? (
-            <div className="px-4 py-2 flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
-              <span className="text-gray-400">Loading...</span>
-            </div>
-          ) : session?.user ? (
+          {session?.user ? (
             <>
-              <div className="px-4 py-2 border-b border-gray-700">
-                <div className="flex items-center space-x-3">
-                  {session.user.image && (
-                    <img
-                      src={session.user.image}
-                      alt={displayName}
-                      className="w-10 h-10 rounded-full border-2 border-gray-700"
-                    />
-                  )}
-                  <div>
-                    <div className="text-gray-300 text-sm font-medium"> Hello {displayName}</div>
-                    {session.user.username && (
-                      <div className="text-gray-500 text-xs">@{session.user.username}</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
               <Link
                 href="/profile"
                 className="block bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-medium text-white mx-2 my-1 transition"
@@ -186,7 +158,6 @@ export default function Navbar({
               >
                 👤 Profile
               </Link>
-
               <Link
                 href="/results"
                 className="block bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium text-white mx-2 my-1 transition"
@@ -194,7 +165,6 @@ export default function Navbar({
               >
                 📊 Results
               </Link>
-
               <Link
                 href="/assets"
                 className="block bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium text-white mx-2 my-1 transition"
@@ -202,7 +172,6 @@ export default function Navbar({
               >
                 📁 Assets
               </Link>
-
               <Link
                 href="/townhall"
                 className="block bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg font-medium text-white mx-2 my-1 transition"
@@ -210,7 +179,6 @@ export default function Navbar({
               >
                 🏛️ Townhall
               </Link>
-
               <Link
                 href="/announcements"
                 className="block bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg font-medium text-white mx-2 my-1 transition"
@@ -218,7 +186,6 @@ export default function Navbar({
               >
                 📢 Announcements
               </Link>
-
               <Link
                 href="/submit-content"
                 className="block bg-pink-600 hover:bg-pink-700 px-4 py-2 rounded-lg font-medium text-white mx-2 my-1 transition"
@@ -226,7 +193,6 @@ export default function Navbar({
               >
                 📝 Submit
               </Link>
-
               {isAdmin && (
                 <Link
                   href="/admin"
@@ -236,7 +202,6 @@ export default function Navbar({
                   ⚙️ Admin
                 </Link>
               )}
-
               <button
                 onClick={() => {
                   signOut({ callbackUrl: "/" });
