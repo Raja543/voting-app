@@ -12,6 +12,7 @@ import { FaEye, FaEyeSlash, FaGoogle, FaTwitter } from "react-icons/fa";
 export default function SignupPage() {
   const router = useRouter();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -21,6 +22,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
 
   const validateForm = () => {
+    if (!name.trim()) return "Name is required";
     if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) return "Invalid email address";
     if (password.length < 6) return "Password must be at least 6 characters";
     if (password !== confirmPassword) return "Passwords do not match";
@@ -40,11 +42,11 @@ export default function SignupPage() {
     }
 
     try {
-      // Example signup API call
-      const res = await fetch("/api/auth/signup", {
+      // Correct signup API call
+      const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       if (!res.ok) {
@@ -76,6 +78,14 @@ export default function SignupPage() {
         <div className="max-w-md w-full bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-8 text-white">
           <h1 className="text-3xl font-semibold mb-6 text-center text-blue-400">Create Account</h1>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <input
+              type="text"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-700"
+              required
+            />
             <input
               type="email"
               placeholder="Email"
