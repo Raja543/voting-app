@@ -29,8 +29,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if user already voted for this post
-    const existingVote = await Vote.findOne({ userId: session.user.email, postId });
+    // Get current voting period
+    const votingStatus = await (await import('@/models/votingStatus')).default.findOne({ isVotingActive: true });
+    if (!votingStatus) {
+      return NextResponse.json({ error: 'Voting is not active.' }, { status: 403 });
+    }
+    const votingPeriod = votingStatus.currentPeriod;
+
+    // Check if user already voted for this post in this period
+    const existingVote = await Vote.findOne({ userId: session.user.email, postId, votingPeriod });
     if (existingVote) {
       return NextResponse.json(
         { error: 'You have already voted for this post.' },
@@ -38,8 +45,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Limit user to 2 votes total
-    const voteCount = await Vote.countDocuments({ userId: session.user.email });
+    // Limit user to 2 votes per period
+    const voteCount = await Vote.countDocuments({ userId: session.user.email, votingPeriod });
     if (voteCount >= 2) {
       return NextResponse.json(
         { error: 'You can only vote for up to 2 posts.' },
@@ -48,10 +55,10 @@ export async function POST(req: Request) {
     }
 
     // Record the vote
-    await Vote.create({ userId: session.user.email, postId });
+    await Vote.create({ userId: session.user.email, postId, votingPeriod });
 
-    // Update vote count in posts
-    const totalVotes = await Vote.countDocuments({ postId });
+    // Update vote count in posts (for this period)
+    const totalVotes = await Vote.countDocuments({ postId, votingPeriod });
     await Post.findByIdAndUpdate(postId, { votes: totalVotes });
 
     return NextResponse.json({ success: true });
@@ -71,14 +78,18 @@ export async function GET(req: Request) {
 
     const session = await getServerSession(authOptions);
 
+    // Get current voting period
+    const votingStatus = await (await import('@/models/votingStatus')).default.findOne({ isVotingActive: true });
+    const votingPeriod = votingStatus?.currentPeriod;
+
     if (allPosts) {
       // Get vote status for all posts (optimized for multiple posts)
-      if (!session?.user?.email) {
+      if (!session?.user?.email || !votingPeriod) {
         return NextResponse.json({ userTotalVotes: 0, voteStatus: {} });
       }
 
-      // Get all user votes in one query
-      const userVotes = await Vote.find({ userId: session.user.email });
+      // Get all user votes in this period in one query
+      const userVotes = await Vote.find({ userId: session.user.email, votingPeriod });
       const userTotalVotes = userVotes.length;
       
       // Create a map of postId -> hasVoted
@@ -93,17 +104,17 @@ export async function GET(req: Request) {
     }
 
     // Single post query (keep existing logic for backward compatibility)
-    if (!postId) {
+    if (!postId || !votingPeriod) {
       return NextResponse.json({ error: 'postId query parameter is required' }, { status: 400 });
     }
 
-    // Get total votes for post
-    const votesCount = await Vote.countDocuments({ postId });
+    // Get total votes for post in this period
+    const votesCount = await Vote.countDocuments({ postId, votingPeriod });
 
-    // Check if current user has voted on this post
+    // Check if current user has voted on this post in this period
     let hasVoted = false;
     if (session?.user?.email) {
-      const vote = await Vote.findOne({ postId, userId: session.user.email });
+      const vote = await Vote.findOne({ postId, userId: session.user.email, votingPeriod });
       hasVoted = !!vote;
     }
 

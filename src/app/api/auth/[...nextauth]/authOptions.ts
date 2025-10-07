@@ -18,7 +18,7 @@ const authOptions: NextAuthOptions = {
         await dbConnect();
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await User.findOne({ email: credentials.email });
+        const user = await User.findOne({ email: credentials.email.toLowerCase() });
         if (!user || !user.password) return null;
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
