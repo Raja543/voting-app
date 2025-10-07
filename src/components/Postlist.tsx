@@ -101,7 +101,10 @@ const Postlist = memo(function Postlist() {
     };
 
     fetchData();
-  }, [session?.user?.email]);
+    // Also re-fetch when session status changes (login/logout)
+    // status: "loading" | "authenticated" | "unauthenticated"
+    // This ensures UI is always in sync after login/logout
+  }, [session?.user?.email, status]);
 
   // Memoize posts to prevent unnecessary re-renders
   const memoizedPosts = useMemo(() => posts, [posts]);
