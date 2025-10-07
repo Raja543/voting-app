@@ -12,25 +12,39 @@ export async function GET() {
   try {
     await dbConnect();
 
+    // Always show previous month as the current voting period
     const votingStatus = await VotingStatus.findOne({ isVotingActive: true });
+
+    // Calculate previous month string
+    const now = new Date();
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    let prevMonth = now.getMonth() - 1;
+    let year = now.getFullYear();
+    if (prevMonth < 0) {
+      prevMonth = 11;
+      year -= 1;
+    }
+    const prevPeriod = `${monthNames[prevMonth]} ${year}`;
 
     if (!votingStatus) {
       return NextResponse.json({
         isVotingActive: false,
-        currentPeriod: null,
+        currentPeriod: prevPeriod,
         votingEndTime: null,
         timeRemaining: null,
       });
     }
 
-    const now = new Date();
     const timeRemaining = votingStatus.votingEndTime
       ? Math.max(0, votingStatus.votingEndTime.getTime() - now.getTime())
       : null;
 
     return NextResponse.json({
       isVotingActive: votingStatus.isVotingActive,
-      currentPeriod: votingStatus.currentPeriod,
+      currentPeriod: prevPeriod,
       votingStartTime: votingStatus.votingStartTime,
       votingEndTime: votingStatus.votingEndTime,
       timeRemaining,
@@ -60,25 +74,19 @@ export async function POST(req: Request) {
     const { action } = await req.json(); // "start" or "stop"
 
     if (action === "start") {
-      // Get current month and year
+      // Always set voting period to previous month
       const now = new Date();
       const monthNames = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
       ];
-      const currentMonth = monthNames[now.getMonth()];
-      const currentYear = now.getFullYear();
-      const currentPeriod = `${currentMonth} ${currentYear}`;
+      let prevMonth = now.getMonth() - 1;
+      let year = now.getFullYear();
+      if (prevMonth < 0) {
+        prevMonth = 11;
+        year -= 1;
+      }
+      const currentPeriod = `${monthNames[prevMonth]} ${year}`;
 
       // Check if voting is already active
       const existingStatus = await VotingStatus.findOne({ isVotingActive: true });
