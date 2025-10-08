@@ -30,25 +30,25 @@ export async function GET() {
     const prevPeriod = `${monthNames[prevMonth]} ${year}`;
 
     if (!votingStatus) {
-      return NextResponse.json({
-        isVotingActive: false,
-        currentPeriod: prevPeriod,
-        votingEndTime: null,
-        timeRemaining: null,
-      });
+        return NextResponse.json({
+          isVotingActive: false,
+          currentPeriod: null,
+          votingEndTime: null,
+          timeRemaining: null,
+        });
     }
 
     const timeRemaining = votingStatus.votingEndTime
       ? Math.max(0, votingStatus.votingEndTime.getTime() - now.getTime())
       : null;
 
-    return NextResponse.json({
-      isVotingActive: votingStatus.isVotingActive,
-      currentPeriod: prevPeriod,
-      votingStartTime: votingStatus.votingStartTime,
-      votingEndTime: votingStatus.votingEndTime,
-      timeRemaining,
-    });
+      return NextResponse.json({
+        isVotingActive: votingStatus.isVotingActive,
+        currentPeriod: votingStatus.isVotingActive ? prevPeriod : null,
+        votingStartTime: votingStatus.votingStartTime,
+        votingEndTime: votingStatus.votingEndTime,
+        timeRemaining,
+      });
   } catch (error) {
     console.error("Get voting status error:", error);
     return NextResponse.json(
