@@ -125,7 +125,18 @@ export async function POST(req: Request) {
       }
 
       const now = new Date();
-      const currentPeriod = activeStatus.currentPeriod;
+      // Always use previous month for closing voting
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      let prevMonth = now.getMonth() - 1;
+      let year = now.getFullYear();
+      if (prevMonth < 0) {
+        prevMonth = 11;
+        year -= 1;
+      }
+      const currentPeriod = `${monthNames[prevMonth]} ${year}`;
 
       // Get all posts for current voting period
       const posts = await Post.find({
