@@ -61,16 +61,53 @@ export async function POST(req: Request) {
       );
     }
 
-  // Record the vote and associate with the active session
-  await Vote.create({ userId: session.user.email, postId, votingPeriod: votingStatus.currentPeriod, votingSessionId });
+    // Try to create the vote and update the post atomically-ish.
+    try {
+      const createdVote = await Vote.create({
+        userId: session.user.email,
+        postId,
+        votingPeriod: votingStatus.currentPeriod,
+        votingSessionId,
+      });
 
-    // Update vote count in posts (for this voting session or fallback to period)
-    const totalVotes = votingSessionId
-      ? await Vote.countDocuments({ postId, votingSessionId })
-      : await Vote.countDocuments({ postId, votingPeriod: votingStatus.currentPeriod });
-    await Post.findByIdAndUpdate(postId, { votes: totalVotes });
+      try {
+        // Increment post vote count using $inc to avoid recalculating from Vote collection.
+        const updatedPost = await Post.findByIdAndUpdate(
+          postId,
+          { $inc: { votes: 1 } },
+          { new: true }
+        );
 
-    return NextResponse.json({ success: true });
+        // If post wasn't found or update failed, rollback the vote we created
+        if (!updatedPost) {
+          await Vote.deleteOne({ _id: createdVote._id });
+          console.error(`Post ${postId} not found — rolled back vote ${createdVote._id}`);
+          return NextResponse.json({ error: 'Post not found' }, { status: 400 });
+        }
+
+        // Return updated counts so client can update UI immediately
+        const totalVotes = updatedPost.votes;
+        const userTotalVotes = await Vote.countDocuments({ userId: session.user.email, votingSessionId });
+
+        return NextResponse.json({ success: true, totalVotes, userTotalVotes });
+      } catch (postErr) {
+        // If updating Post failed, remove the created vote to avoid inconsistency
+        try {
+          await Vote.deleteOne({ _id: createdVote._id });
+        } catch (cleanupErr) {
+          console.error('Failed to cleanup vote after post update failure:', cleanupErr);
+        }
+        console.error('Failed to update post vote count, rolled back vote:', postErr);
+        return NextResponse.json({ error: 'Failed to record vote' }, { status: 500 });
+      }
+    } catch (err: any) {
+      // Handle duplicate key (unique index) errors gracefully
+      if (err?.code === 11000) {
+        return NextResponse.json({ error: 'Duplicate vote - you may have already voted' }, { status: 409 });
+      }
+      console.error('Vote create error:', err);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
   } catch (error) {
     console.error('Vote API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
