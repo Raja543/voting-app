@@ -37,15 +37,13 @@ export async function POST(req: Request) {
     }
     const votingSessionId = votingStatus._id.toString();
 
-    // Check if user already voted for this post in this voting session
-    // Prefer votingSessionId; fallback to votingPeriod for backwards compatibility.
+    // Check if user already voted for this post in this voting session.
+    // If a votingSessionId is present, we must treat the session as isolated
+    // and only consider session-based votes (no fallback to legacy votingPeriod).
     const existingVote = await Vote.findOne({
       userId: session.user.email,
       postId,
-      $or: [
-        { votingSessionId },
-        { votingPeriod: votingStatus.currentPeriod },
-      ],
+      votingSessionId,
     });
     if (existingVote) {
       return NextResponse.json(
@@ -54,12 +52,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Limit user to 2 votes per voting session (prefer session id)
-    let voteCount = await Vote.countDocuments({ userId: session.user.email, votingSessionId });
-    if (typeof voteCount === 'number' && voteCount === 0) {
-      // fallback to legacy votingPeriod field if no session-based votes exist
-      voteCount = await Vote.countDocuments({ userId: session.user.email, votingPeriod: votingStatus.currentPeriod });
-    }
+    // Limit user to 2 votes per voting session. Use session id exclusively when present
+    const voteCount = await Vote.countDocuments({ userId: session.user.email, votingSessionId });
     if (voteCount >= 2) {
       return NextResponse.json(
         { error: 'You can only vote for up to 2 posts.' },
