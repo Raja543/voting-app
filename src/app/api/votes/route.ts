@@ -136,11 +136,21 @@ export async function GET(req: Request) {
         return NextResponse.json({ userTotalVotes: 0, voteStatus: {} });
       }
 
-      // Get all user votes in this period in one query
-      // Prefer session-based votes; fallback to legacy votingPeriod
-      let userVotes = votingSessionId
-        ? await Vote.find({ userId: session.user.email, votingSessionId })
-        : await Vote.find({ userId: session.user.email, votingPeriod });
+      // Get all user votes in this period/session in one query.
+      // If a votingSessionId exists, include both session-based votes and
+      // legacy period-based votes so the UI correctly reflects any votes
+      // the user may have (helps when some votes lack session id).
+      let userVotes;
+      if (votingSessionId && votingPeriod) {
+        userVotes = await Vote.find({
+          userId: session.user.email,
+          $or: [ { votingSessionId }, { votingPeriod } ],
+        });
+      } else if (votingSessionId) {
+        userVotes = await Vote.find({ userId: session.user.email, votingSessionId });
+      } else {
+        userVotes = await Vote.find({ userId: session.user.email, votingPeriod });
+      }
       const userTotalVotes = userVotes.length;
       
       // Create a map of postId -> hasVoted
@@ -207,17 +217,32 @@ export async function GET(req: Request) {
     }
 
       // Get total votes for post in this voting session (prefer session id)
-    const votesCount = votingSessionId
-      ? await Vote.countDocuments({ postId, votingSessionId })
-      : await Vote.countDocuments({ postId, votingPeriod });
+    // Count votes for the post. Prefer session-based counts but also include
+    // legacy period-based votes so counts remain accurate after reloads.
+    let votesCount;
+    if (votingSessionId && votingPeriod) {
+      votesCount = await Vote.countDocuments({ postId, $or: [ { votingSessionId }, { votingPeriod } ] });
+    } else if (votingSessionId) {
+      votesCount = await Vote.countDocuments({ postId, votingSessionId });
+    } else {
+      votesCount = await Vote.countDocuments({ postId, votingPeriod });
+    }
 
     // Check if current user has voted on this post in this period
     let hasVoted = false;
     if (session?.user?.email) {
-      const vote = votingSessionId
-        ? await Vote.findOne({ postId, userId: session.user.email, votingSessionId })
-        : await Vote.findOne({ postId, userId: session.user.email, votingPeriod });
-      hasVoted = !!vote;
+      // Check whether the user has voted for this post in the current session
+      // or (for legacy votes) in the matching period.
+      if (votingSessionId && votingPeriod) {
+        const vote = await Vote.findOne({ postId, userId: session.user.email, $or: [ { votingSessionId }, { votingPeriod } ] });
+        hasVoted = !!vote;
+      } else if (votingSessionId) {
+        const vote = await Vote.findOne({ postId, userId: session.user.email, votingSessionId });
+        hasVoted = !!vote;
+      } else {
+        const vote = await Vote.findOne({ postId, userId: session.user.email, votingPeriod });
+        hasVoted = !!vote;
+      }
     }
 
     return NextResponse.json({ count: votesCount, hasVoted });
