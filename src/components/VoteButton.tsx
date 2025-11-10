@@ -7,7 +7,7 @@ interface VoteButtonProps {
   postId: string;
   hasVoted?: boolean;
   userTotalVotes?: number;
-  onVoted?: () => void;
+  onVoted?: (postId: string, totalVotes?: number, userTotalVotes?: number) => void;
   disabled?: boolean;
 }
 
@@ -44,8 +44,13 @@ const VoteButton = memo(function VoteButton({ postId, hasVoted: initialHasVoted,
 
       if (res.ok) {
         setHasVoted(true);
-        setUserTotalVotes(prev => prev + 1);
-        onVoted?.();
+        // Use server-provided counts when available to avoid UI mismatch
+        if (typeof data.userTotalVotes === 'number') {
+          setUserTotalVotes(data.userTotalVotes);
+        } else {
+          setUserTotalVotes(prev => prev + 1);
+        }
+        onVoted?.(postId, data.totalVotes, data.userTotalVotes);
       } else {
         alert(data.error || "Error voting");
       }

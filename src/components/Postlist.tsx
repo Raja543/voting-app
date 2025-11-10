@@ -19,7 +19,7 @@ const PostCard = memo(({ post, voteStatus, userTotalVotes, onVoteSuccess }: {
   post: Post;
   voteStatus: Record<string, boolean>;
   userTotalVotes: number;
-  onVoteSuccess: (postId: string) => void;
+  onVoteSuccess: (postId: string, totalVotes?: number, userTotalVotes?: number) => void;
 }) => (
   <div className="bg-gray-800 rounded-xl shadow-md border border-gray-700 hover:border-blue-500 hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col h-full">
     <div className="p-5 flex-1 flex flex-col">
@@ -44,7 +44,7 @@ const PostCard = memo(({ post, voteStatus, userTotalVotes, onVoteSuccess }: {
         postId={post._id} 
         hasVoted={voteStatus[post._id] || false}
         userTotalVotes={userTotalVotes}
-        onVoted={() => onVoteSuccess(post._id)} 
+        onVoted={onVoteSuccess}
       />
     </div>
   </div>
@@ -89,6 +89,25 @@ const Postlist = memo(function Postlist() {
           const votingStatusData = await votingStatusRes.json();
           setIsVotingActive(votingStatusData.isVotingActive);
         }
+
+        // After loading posts and voting status, fetch authoritative vote counts
+        // to ensure UI is fully synced with DB. This calls the new sync endpoint
+        // which reads directly from the Vote collection for the active session.
+        try {
+          const syncRes = await fetch('/api/votes?sync=true');
+          if (syncRes.ok) {
+            const syncData = await syncRes.json();
+            if (syncData?.counts) {
+              setPosts(prevPosts => prevPosts.map(p => ({
+                ...p,
+                votes: typeof syncData.counts[p._id] === 'number' ? syncData.counts[p._id] : p.votes
+              })));
+            }
+          }
+        } catch (syncErr) {
+          // Non-fatal: if sync fails, keep previously loaded post counts
+          console.error('Failed to sync votes:', syncErr);
+        }
       } catch (err) {
         console.error("Failed to fetch data:", err);
         setPosts([]);
@@ -109,15 +128,19 @@ const Postlist = memo(function Postlist() {
   // Memoize posts to prevent unnecessary re-renders
   const memoizedPosts = useMemo(() => posts, [posts]);
 
-  const handleVoteSuccess = useCallback((postId: string) => {
+  const handleVoteSuccess = useCallback((postId: string, totalVotes?: number, userTotalVotesResp?: number) => {
     setPosts(prevPosts =>
       prevPosts.map(post =>
-        post._id === postId ? { ...post, votes: post.votes + 1 } : post
+        post._id === postId ? { ...post, votes: typeof totalVotes === 'number' ? totalVotes : post.votes + 1 } : post
       )
     );
     // Update vote status locally
     setVoteStatus(prev => ({ ...prev, [postId]: true }));
-    setUserTotalVotes(prev => prev + 1);
+    if (typeof userTotalVotesResp === 'number') {
+      setUserTotalVotes(userTotalVotesResp);
+    } else {
+      setUserTotalVotes(prev => prev + 1);
+    }
   }, []);
 
   return (

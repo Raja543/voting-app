@@ -31,6 +31,13 @@ voteSchema.index(
   { unique: true, partialFilterExpression: { votingSessionId: { $exists: true } } }
 );
 
+// Indexes to speed up aggregation queries by session or period.
+// Useful for queries like: group by postId where votingSessionId = X
+voteSchema.index({ votingSessionId: 1 });
+voteSchema.index({ votingSessionId: 1, postId: 1 });
+// Fallback index for legacy documents that only have votingPeriod
+voteSchema.index({ votingPeriod: 1, postId: 1 });
+
 const Vote = mongoose.models.Vote || mongoose.model("Vote", voteSchema);
 
 export default Vote;

@@ -161,6 +161,46 @@ export async function GET(req: Request) {
       return response;
     }
 
+    // If sync param is provided, return authoritative vote counts for all posts
+    const sync = url.searchParams.get('sync') === 'true';
+    if (sync) {
+      // Only allow sync when votingPeriod is known
+      if (!votingPeriod) {
+        return NextResponse.json({ error: 'No active voting period' }, { status: 400 });
+      }
+
+      // Build match for active session if available, else fallback to votingPeriod
+      const match: any = {};
+      if (votingSessionId) {
+        match.votingSessionId = votingSessionId;
+      } else {
+        match.votingPeriod = votingPeriod;
+      }
+
+      // Aggregate vote counts per post
+      const counts = await Vote.aggregate([
+        { $match: match },
+        { $group: { _id: '$postId', count: { $sum: 1 } } }
+      ]);
+
+      const countsMap: Record<string, number> = {};
+      counts.forEach((c: any) => {
+        countsMap[c._id] = c.count;
+      });
+
+      // For admins, optionally return individual votes when requested
+      const includeVotes = url.searchParams.get('includeVotes') === 'true' && session?.user?.isAdmin;
+      let votesList = null;
+      if (includeVotes) {
+        votesList = await Vote.find(match).lean();
+      }
+
+      const response = NextResponse.json({ counts: countsMap, votes: votesList });
+      // Don't cache sync results
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
+    }
+
     // Single post query (keep existing logic for backward compatibility)
     if (!postId || !votingPeriod) {
       return NextResponse.json({ error: 'postId query parameter is required' }, { status: 400 });
