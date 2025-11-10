@@ -19,7 +19,7 @@ const PostCard = memo(({ post, voteStatus, userTotalVotes, onVoteSuccess }: {
   post: Post;
   voteStatus: Record<string, boolean>;
   userTotalVotes: number;
-  onVoteSuccess: (postId: string, totalVotes?: number, userTotalVotes?: number) => void;
+  onVoteSuccess: (postId: string) => void;
 }) => (
   <div className="bg-gray-800 rounded-xl shadow-md border border-gray-700 hover:border-blue-500 hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col h-full">
     <div className="p-5 flex-1 flex flex-col">
@@ -44,7 +44,7 @@ const PostCard = memo(({ post, voteStatus, userTotalVotes, onVoteSuccess }: {
         postId={post._id} 
         hasVoted={voteStatus[post._id] || false}
         userTotalVotes={userTotalVotes}
-        onVoted={onVoteSuccess}
+        onVoted={() => onVoteSuccess(post._id)} 
       />
     </div>
   </div>
@@ -128,33 +128,15 @@ const Postlist = memo(function Postlist() {
   // Memoize posts to prevent unnecessary re-renders
   const memoizedPosts = useMemo(() => posts, [posts]);
 
-  const handleVoteSuccess = useCallback((postId: string, totalVotes?: number, userTotalVotesResp?: number) => {
+  const handleVoteSuccess = useCallback((postId: string) => {
     setPosts(prevPosts =>
       prevPosts.map(post =>
-        post._id === postId ? { ...post, votes: typeof totalVotes === 'number' ? totalVotes : post.votes + 1 } : post
+        post._id === postId ? { ...post, votes: post.votes + 1 } : post
       )
     );
     // Update vote status locally
     setVoteStatus(prev => ({ ...prev, [postId]: true }));
-    if (typeof userTotalVotesResp === 'number') {
-      setUserTotalVotes(userTotalVotesResp);
-    } else {
-      setUserTotalVotes(prev => prev + 1);
-    }
-    // Refresh authoritative voteStatus/userTotalVotes to ensure UI fully synced
-    // This makes sure the VoteButton and vote map reflect DB state after a vote.
-    (async () => {
-      try {
-        const votesRes = await fetch('/api/votes?allPosts=true');
-        if (votesRes && votesRes.ok) {
-          const votesData = await votesRes.json();
-          setVoteStatus(votesData.voteStatus || {});
-          setUserTotalVotes(votesData.userTotalVotes || 0);
-        }
-      } catch (err) {
-        console.error('Failed to refresh vote status after vote:', err);
-      }
-    })();
+    setUserTotalVotes(prev => prev + 1);
   }, []);
 
   return (
