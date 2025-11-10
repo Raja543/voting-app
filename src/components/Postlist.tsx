@@ -141,6 +141,20 @@ const Postlist = memo(function Postlist() {
     } else {
       setUserTotalVotes(prev => prev + 1);
     }
+    // Refresh authoritative voteStatus/userTotalVotes to ensure UI fully synced
+    // This makes sure the VoteButton and vote map reflect DB state after a vote.
+    (async () => {
+      try {
+        const votesRes = await fetch('/api/votes?allPosts=true');
+        if (votesRes && votesRes.ok) {
+          const votesData = await votesRes.json();
+          setVoteStatus(votesData.voteStatus || {});
+          setUserTotalVotes(votesData.userTotalVotes || 0);
+        }
+      } catch (err) {
+        console.error('Failed to refresh vote status after vote:', err);
+      }
+    })();
   }, []);
 
   return (
