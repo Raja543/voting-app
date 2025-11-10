@@ -150,7 +150,14 @@ export async function GET(req: Request) {
       });
 
       const response = NextResponse.json({ userTotalVotes, voteStatus });
-      response.headers.set('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=30');
+      // Do not publicly cache authenticated user vote state. When a user is
+      // logged in we must return fresh data so the UI reflects recent votes.
+      if (session?.user?.email) {
+        response.headers.set('Cache-Control', 'no-store');
+      } else {
+        // Allow short caching for anonymous requests
+        response.headers.set('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=30');
+      }
       return response;
     }
 
