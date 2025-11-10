@@ -12,43 +12,40 @@ export async function GET() {
   try {
     await dbConnect();
 
-    // Always show previous month as the current voting period
+    // Use the period saved in votingStatus when available. The period should
+    // correspond to the month for which voting is active (current month by default).
     const votingStatus = await VotingStatus.findOne({ isVotingActive: true });
 
-    // Calculate previous month string
     const now = new Date();
     const monthNames = [
       "January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"
     ];
-    let prevMonth = now.getMonth() - 1;
-    let year = now.getFullYear();
-    if (prevMonth < 0) {
-      prevMonth = 11;
-      year -= 1;
-    }
-    const prevPeriod = `${monthNames[prevMonth]} ${year}`;
+    const currentPeriodComputed = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
     if (!votingStatus) {
-        return NextResponse.json({
-          isVotingActive: false,
-          currentPeriod: null,
-          votingEndTime: null,
-          timeRemaining: null,
-        });
+      return NextResponse.json({
+        isVotingActive: false,
+        currentPeriod: null,
+        votingEndTime: null,
+        timeRemaining: null,
+      });
     }
 
     const timeRemaining = votingStatus.votingEndTime
       ? Math.max(0, votingStatus.votingEndTime.getTime() - now.getTime())
       : null;
 
-      return NextResponse.json({
-        isVotingActive: votingStatus.isVotingActive,
-        currentPeriod: votingStatus.isVotingActive ? prevPeriod : null,
-        votingStartTime: votingStatus.votingStartTime,
-        votingEndTime: votingStatus.votingEndTime,
-        timeRemaining,
-      });
+    // Prefer the stored currentPeriod on the votingStatus document; fallback to a computed current month.
+    const currentPeriod = votingStatus.currentPeriod || currentPeriodComputed;
+
+    return NextResponse.json({
+      isVotingActive: votingStatus.isVotingActive,
+      currentPeriod: votingStatus.isVotingActive ? currentPeriod : null,
+      votingStartTime: votingStatus.votingStartTime,
+      votingEndTime: votingStatus.votingEndTime,
+      timeRemaining,
+    });
   } catch (error) {
     console.error("Get voting status error:", error);
     return NextResponse.json(
@@ -71,22 +68,40 @@ export async function POST(req: Request) {
       );
     }
 
-    const { action } = await req.json(); // "start" or "stop"
+  const body = await req.json();
+  const action = body?.action;
+  // Optional: admins can provide an explicit period (e.g. "October 2025") or
+  // a flag `usePreviousMonth` to indicate the period should be the previous month
+  // (useful if voting for a month starts after that month ends).
+  const explicitPeriod: string | undefined = body?.period;
+  const usePreviousMonth: boolean | undefined = body?.usePreviousMonth;
 
     if (action === "start") {
-      // Always set voting period to previous month
+      // Determine which period to start voting for.
+      // Priority: explicitPeriod (if provided) -> previous month (if usePreviousMonth true OR undefined) -> current month
       const now = new Date();
       const monthNames = [
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
       ];
-      let prevMonth = now.getMonth() - 1;
-      let year = now.getFullYear();
-      if (prevMonth < 0) {
-        prevMonth = 11;
-        year -= 1;
+
+      let currentPeriod: string;
+      if (explicitPeriod) {
+        currentPeriod = explicitPeriod;
+      } else {
+        const preferPrev = usePreviousMonth === undefined ? true : Boolean(usePreviousMonth);
+        if (preferPrev) {
+          let prevMonth = now.getMonth() - 1;
+          let year = now.getFullYear();
+          if (prevMonth < 0) {
+            prevMonth = 11;
+            year -= 1;
+          }
+          currentPeriod = `${monthNames[prevMonth]} ${year}`;
+        } else {
+          currentPeriod = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+        }
       }
-      const currentPeriod = `${monthNames[prevMonth]} ${year}`;
 
       // Check if voting is already active
       const existingStatus = await VotingStatus.findOne({ isVotingActive: true });
@@ -125,18 +140,13 @@ export async function POST(req: Request) {
       }
 
       const now = new Date();
-      // Always use previous month for closing voting
+      // Use the stored active period if available; otherwise compute current month.
       const monthNames = [
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
       ];
-      let prevMonth = now.getMonth() - 1;
-      let year = now.getFullYear();
-      if (prevMonth < 0) {
-        prevMonth = 11;
-        year -= 1;
-      }
-      const currentPeriod = `${monthNames[prevMonth]} ${year}`;
+      const computedCurrentPeriod = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+      const currentPeriod = activeStatus.currentPeriod || computedCurrentPeriod;
 
       // Get all posts for current voting period
       const posts = await Post.find({
@@ -154,9 +164,13 @@ export async function POST(req: Request) {
       // Get vote counts for each post
       const postsWithVotes = await Promise.all(
         posts.map(async (post) => {
-          const voteCount = await Vote.countDocuments({
-            postId: post._id.toString(),
-          });
+          // Prefer session-based votes (if admin started voting which creates a votingStatus).
+          // Use activeStatus._id as the votingSessionId. Fallback to legacy votingPeriod if needed.
+          const votingSessionId = activeStatus._id.toString();
+          let voteCount = await Vote.countDocuments({ postId: post._id.toString(), votingSessionId });
+          if (!voteCount) {
+            voteCount = await Vote.countDocuments({ postId: post._id.toString(), votingPeriod: currentPeriod });
+          }
           return {
             ...post.toObject(),
             totalVotes: voteCount,
