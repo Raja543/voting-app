@@ -89,7 +89,9 @@ export async function POST(req: Request) {
       if (explicitPeriod) {
         currentPeriod = explicitPeriod;
       } else {
-        const preferPrev = usePreviousMonth === undefined ? true : Boolean(usePreviousMonth);
+  // By default, start voting for the current month unless the admin
+  // explicitly requests the previous month via `usePreviousMonth: true`.
+  const preferPrev = usePreviousMonth === undefined ? false : Boolean(usePreviousMonth);
         if (preferPrev) {
           let prevMonth = now.getMonth() - 1;
           let year = now.getFullYear();

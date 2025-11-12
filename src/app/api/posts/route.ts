@@ -53,21 +53,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get previous month and year (content uploaded in Sep falls into Aug category)
+    // Use the current month/year as the votingPeriod for newly created posts.
+    // This follows the "natural" flow where posts created and voting started
+    // in the same month share the same period label.
     const now = new Date();
     const monthNames = ["January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"];
-    
-    let previousMonth = now.getMonth() - 1;
-    let year = now.getFullYear();
-    
-    // Handle January (previous month is December of previous year)
-    if (previousMonth < 0) {
-      previousMonth = 11; // December
-      year = year - 1;
-    }
-    
-    const votingPeriod = `${monthNames[previousMonth]} ${year}`;
+    const votingPeriod = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
     const newPost = await Post.create({
       title: body.title,
