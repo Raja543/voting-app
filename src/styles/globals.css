@@ -2,8 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Add your custom global styles below */
-body {
-  margin: 0;
-  font-family: system-ui, sans-serif;
+@layer base {
+  body {
+    margin: 0;
+  }
 }

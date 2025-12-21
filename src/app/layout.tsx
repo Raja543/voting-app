@@ -2,6 +2,12 @@ import type { Metadata, Viewport } from "next";
 import React from "react";
 import ClientLayout from "./clientlayout";
 import "../styles/globals.css";
+import { Fragment_Mono } from "next/font/google";
+
+const fragmentMono = Fragment_Mono({
+  subsets: ["latin"],
+  weight: "400",
+});
 
 export const metadata: Metadata = {
   title: "Voting App",
@@ -20,7 +26,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={fragmentMono.className}>
       <head>
         {/* Service worker registration removed */}
       </head>

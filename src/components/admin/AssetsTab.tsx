@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import React from "react";
 
 interface Asset {
   _id: string;
@@ -24,147 +26,182 @@ interface AssetsTabProps {
   newAsset: NewAsset;
   setNewAsset: (asset: NewAsset) => void;
   addAsset: (e: React.FormEvent<HTMLFormElement>) => void;
-  deleteAsset: (id: string) => void;
-  assetSearch: string;
-  setAssetSearch: (search: string) => void;
+  assetFiles: File[];
+  setAssetFiles: (files: File[]) => void;
 }
 
-
 export default function AssetsTab({
-  assets = [],
   newAsset,
   setNewAsset,
   addAsset,
-  deleteAsset,
-  assetSearch,
-  setAssetSearch,
+  assetFiles,
+  setAssetFiles,
 }: AssetsTabProps) {
-  // Defensive: filter only if assets is an array
-  const filteredAssets = Array.isArray(assets)
-    ? assets.filter(asset =>
-        (asset.title || "").toLowerCase().includes(assetSearch.toLowerCase()) ||
-        (asset.description || "").toLowerCase().includes(assetSearch.toLowerCase())
-      )
-    : [];
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setAssetFiles(files);
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Add Asset Form */}
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold mb-4 text-green-400">Add New Asset</h2>
-        <form onSubmit={addAsset} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="Asset Title"
-            value={newAsset.title}
-            onChange={(e) => setNewAsset({ ...newAsset, title: e.target.value })}
-            required
-            className="rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
-          />
-          <select
-            value={newAsset.type}
-            onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value as "image" | "video" | "banner" })}
-            className="rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
-          >
-            <option value="image">🖼️ Image</option>
-            <option value="video">🎥 Video</option>
-            <option value="banner">🎨 Banner</option>
-          </select>
-          <input
-            type="url"
-            placeholder="GDrive Link"
-            value={newAsset.gdriveLink}
-            onChange={(e) => setNewAsset({ ...newAsset, gdriveLink: e.target.value })}
-            required
-            className="rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
-          />
-          <input
-            type="text"
-            placeholder="Category (optional)"
-            value={newAsset.category}
-            onChange={(e) => setNewAsset({ ...newAsset, category: e.target.value })}
-            className="rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
-          />
-          <textarea
-            placeholder="Description (optional)"
-            value={newAsset.description}
-            onChange={(e) => setNewAsset({ ...newAsset, description: e.target.value })}
-            className="md:col-span-2 rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
-            rows={2}
-          />
-          <button
-            type="submit"
-            className="md:col-span-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-semibold transition"
-          >
-            ➕ Add Asset
-          </button>
-        </form>
+    <form
+      onSubmit={addAsset}
+      className="bg-[#11161c] border border-gray-800"
+    >
+      {/* Upload Header */}
+      <div
+        className="p-6 border-b border-gray-800 flex items-center justify-center cursor-pointer"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <Image
+          src="/upload.png"
+          alt="Upload"
+          width={48}
+          height={48}
+          className="opacity-80"
+        />
       </div>
 
-      {/* Assets List */}
-      <div className="bg-gray-800 rounded-lg border border-gray-700">
-        <div className="p-4 border-b border-gray-700">
-          <h2 className="text-xl font-semibold text-blue-400">Assets</h2>
-          <input
-            type="text"
-            placeholder="Search assets..."
-            value={assetSearch}
-            onChange={(e) => setAssetSearch(e.target.value)}
-            className="mt-4 w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
-          />
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+        {/* LEFT  Preview Area */}
+        <div className="lg:col-span-2 bg-[#0b0f14] border border-gray-800 flex flex-col min-h-[220px] lg:min-h-[360px]">
+          {/* Preview */}
+          <div className="flex-1 flex items-center justify-center text-gray-600 text-sm">
+            {assetFiles && assetFiles.length > 0 ? (
+              <span className="text-xs text-gray-300 break-all px-3 text-center">
+                {assetFiles.length === 1
+                  ? `Selected file: ${assetFiles[0].name}`
+                  : `${assetFiles.length} files selected`}
+              </span>
+            ) : (
+              <span>Asset preview will appear here</span>
+            )}
+          </div>
+
+          {/* Thumbnails */}
+          <div className="grid grid-cols-5 gap-2 p-2 border-t border-gray-800 overflow-x-auto">
+            {assetFiles && assetFiles.length > 0
+              ? assetFiles.slice(0, 10).map((file, i) => {
+                  const isImage = file.type.startsWith("image/");
+                  const url = URL.createObjectURL(file);
+                  return (
+                    <div
+                      key={i}
+                      className="h-14 bg-[#11161c] border border-gray-800 flex items-center justify-center overflow-hidden"
+                    >
+                      {isImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={url}
+                          alt={file.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-[10px] text-gray-300 px-1 truncate">
+                          {file.name}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })
+              : Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-14 bg-[#11161c] border border-gray-800"
+                  />
+                ))}
+          </div>
         </div>
-        <div className="max-h-96 overflow-y-auto">
-          {filteredAssets.length === 0 ? (
-            <div className="p-4 text-gray-400">No assets found.</div>
-          ) : (
-            filteredAssets.map((asset) => (
-              <div key={asset._id} className="p-4 border-b border-gray-700 last:border-b-0">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">
-                        {asset.type === "image" ? "🖼️" : asset.type === "video" ? "🎥" : "🎨"}
-                      </span>
-                      <h3 className="font-semibold text-lg text-blue-400">{asset.title}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        asset.type === "image" ? "bg-blue-100 text-blue-800" :
-                        asset.type === "video" ? "bg-red-100 text-red-800" :
-                        "bg-purple-100 text-purple-800"
-                      }`}>
-                        {asset.type.charAt(0).toUpperCase() + asset.type.slice(1)}
-                      </span>
-                    </div>
-                    {asset.description && (
-                      <p className="text-gray-300 mb-2">{asset.description}</p>
-                    )}
-                    {asset.category && (
-                      <span className="text-xs text-gray-500 bg-gray-700 px-2 py-1 rounded">
-                        {asset.category}
-                      </span>
-                    )}
-                    <div className="mt-2">
-                      <a
-                        href={asset.gdriveLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-400 hover:text-green-300 text-sm"
-                      >
-                        {asset.gdriveLink}
-                      </a>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => deleteAsset(asset._id)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md font-semibold"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
+
+        {/* RIGHT  Metadata */}
+        <div className="space-y-6">
+          {/* Category (for organizing assets) */}
+          <div>
+            <label className="block text-[#3aa0d8] text-sm mb-2">
+              Category
+            </label>
+            <select
+              value={newAsset.category}
+              onChange={(e) =>
+                setNewAsset({
+                  ...newAsset,
+                  category: e.target.value,
+                })
+              }
+              className="
+                w-full
+                bg-[#0b0f14]
+                border border-gray-800
+                px-3 py-2
+                text-white text-sm
+                focus:outline-none
+              "
+            >
+              <option value="">Select category...</option>
+              <option value="Branding">Branding</option>
+              <option value="Game Icons">Game Icons</option>
+              <option value="Images">Images</option>
+              <option value="Videos">Videos</option>
+              <option value="Misc">Misc.</option>
+            </select>
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className="block text-[#3aa0d8] text-sm mb-2">
+              Title
+            </label>
+            <input
+              type="text"
+              value={newAsset.title}
+              onChange={(e) =>
+                setNewAsset({ ...newAsset, title: e.target.value })
+              }
+              placeholder="Title"
+              required
+              className="
+                w-full
+                bg-[#0b0f14]
+                border border-gray-800
+                px-3 py-2
+                text-white text-sm
+                focus:outline-none
+              "
+            />
+          </div>
+
+          {/* File input (hidden, triggered by header icon) */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
+          {/* Hidden link (kept for logic consistency) */}
+          <input type="hidden" value={newAsset.gdriveLink} />
+
+          {/* Submit */}
+          <button
+            type="submit"
+            className="
+              w-full
+              bg-[#10B981]
+              hover:bg-[#059669]
+              text-white
+              py-2
+              text-sm
+              font-medium
+            "
+          >
+            Upload Asset
+          </button>
         </div>
       </div>
-    </div>
+    </form>
   );
 }

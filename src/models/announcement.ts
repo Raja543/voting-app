@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IAnnouncement extends Document {
   title: string;
   content: string;
-  priority: "low" | "medium" | "high";
+  priority: "CRITICAL" | "GENERAL" | "CONTENT_FOCUS";
   isActive: boolean;
   createdBy: string; // Admin user ID
   createdAt: Date;
@@ -25,8 +25,8 @@ const AnnouncementSchema = new Schema<IAnnouncement>(
     priority: {
       type: String,
       required: true,
-      enum: ["low", "medium", "high"],
-      default: "medium",
+      enum: ["CRITICAL", "GENERAL", "CONTENT_FOCUS"],
+      default: "GENERAL",
     },
     isActive: {
       type: Boolean,

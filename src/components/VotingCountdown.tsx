@@ -2,97 +2,38 @@
 
 import { useState, useEffect } from "react";
 
-interface VotingStatus {
-  isVotingActive: boolean;
-  currentPeriod: string | null;
-  votingEndTime: string | null;
-  timeRemaining: number | null;
-}
-
 export default function VotingCountdown() {
-  const [votingStatus, setVotingStatus] = useState<VotingStatus>({
-    isVotingActive: false,
-    currentPeriod: null,
-    votingEndTime: null,
-    timeRemaining: null
-  });
-  const [timeLeft, setTimeLeft] = useState<string>("");
+  const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
-    const fetchVotingStatus = async () => {
-      try {
-        const response = await fetch("/api/voting-status");
-        const data = await response.json();
-        setVotingStatus(data);
-      } catch (err) {
-        console.error("Failed to fetch voting status:", err);
-      }
+    const update = async () => {
+      const res = await fetch("/api/voting-status");
+      const data = await res.json();
+      if (!data?.isVotingActive || !data.votingEndTime) return;
+
+      const diff = new Date(data.votingEndTime).getTime() - Date.now();
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff / 3600000) % 24);
+      const m = Math.floor((diff / 60000) % 60);
+
+      setTimeLeft(d > 0 ? `${d}D ${h}H ${m}M` : `${h}H ${m}M`);
     };
 
-    fetchVotingStatus();
-    
-    // Update every minute
-    const interval = setInterval(fetchVotingStatus, 60000);
-    return () => clearInterval(interval);
+    update();
+    const i = setInterval(update, 60000);
+    return () => clearInterval(i);
   }, []);
 
-  useEffect(() => {
-    if (!votingStatus.isVotingActive || !votingStatus.timeRemaining) {
-      setTimeLeft("");
-      return;
-    }
-
-    const updateCountdown = () => {
-      const now = Date.now();
-      const endTime = new Date(votingStatus.votingEndTime!).getTime();
-      const remaining = Math.max(0, endTime - now);
-
-      if (remaining <= 0) {
-        setTimeLeft("Voting has ended");
-        return;
-      }
-
-      const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-
-      if (days > 0) {
-        setTimeLeft(`${days}d ${hours}h ${minutes}m`);
-      } else if (hours > 0) {
-        setTimeLeft(`${hours}h ${minutes}m`);
-      } else {
-        setTimeLeft(`${minutes}m`);
-      }
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 60000); // Update every minute
-    return () => clearInterval(interval);
-  }, [votingStatus]);
-
-  if (!votingStatus.isVotingActive) {
-    return (
-      <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-center mb-6">
-        <div className="text-red-300 font-medium text-lg">
-          🔴 Voting is currently inactive
-        </div>
-        <div className="text-red-400 text-sm mt-1">
-          Check back later when admin starts voting
-        </div>
-      </div>
-    );
-  }
+  if (!timeLeft) return null;
 
   return (
-    <div className="bg-green-900/30 border border-green-700 rounded-lg p-4 text-center mb-6">
-      <div className="text-green-300 font-medium text-lg mb-2">
-        🟢 Voting is Active - {votingStatus.currentPeriod}
-      </div>
-      {timeLeft && (
-        <div className="text-green-400 text-sm">
-          Voting ends in: <span className="font-bold text-green-300">{timeLeft}</span>
-        </div>
-      )}
+    <div className="flex items-center justify-center gap-3 text-xs sm:text-sm">
+      <span className="flex items-center gap-2 text-[#10B981]">
+        <span className="h-2 w-2 rounded-full bg-[#10B981]" />
+        LIVE
+      </span>
+      <span className="text-gray-500">ENDS IN</span>
+      <span className="text-[#10B981] font-medium">{timeLeft}</span>
     </div>
   );
 }

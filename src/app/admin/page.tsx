@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import {
   AdminTabs,
   PostsTab,
@@ -34,6 +34,10 @@ export default function AdminPage() {
     setNewPost,
     newAsset,
     setNewAsset,
+    assetFiles,
+    setAssetFiles,
+    assetFile,
+    setAssetFile,
     newRecording,
     setNewRecording,
     newAnnouncement,
@@ -104,10 +108,10 @@ export default function AdminPage() {
 
   return (
     <>
-      <Navbar showAdminHeading={true} />
+      <Sidebar />
       
-      <div className="min-h-screen bg-gray-900 text-gray-100 pt-20">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-[#0D1117] text-gray-100 px-4 py-6 sm:px-8 sm:py-8">
+        <div className="container px-0 sm:px-4 py-8">
           {/* Tab Navigation */}
           <AdminTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
@@ -146,6 +150,8 @@ export default function AdminPage() {
               newAsset={newAsset}
               setNewAsset={setNewAsset}
               addAsset={addAsset}
+              assetFiles={assetFiles}
+              setAssetFiles={setAssetFiles}
               deleteAsset={deleteAsset}
               assetSearch={assetSearch}
               setAssetSearch={setAssetSearch}

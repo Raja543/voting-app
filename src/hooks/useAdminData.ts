@@ -47,9 +47,6 @@ interface TownhallRecording {
   title: string;
   description?: string;
   gdriveLink: string;
-  recordingDate: string;
-  thumbnailUrl?: string;
-  duration?: string;
   createdAt: string;
 }
 
@@ -57,7 +54,7 @@ interface Announcement {
   _id: string;
   title: string;
   content: string;
-  priority: "low" | "medium" | "high";
+	priority: "CRITICAL" | "GENERAL" | "CONTENT_FOCUS";
   isActive: boolean;
   createdBy: string;
   createdAt: string;
@@ -74,6 +71,7 @@ interface ContentSubmission {
   submittedBy: string;
   status: "pending" | "approved" | "rejected";
   adminNotes?: string;
+  impressions?: number;
   createdAt: string;
 }
 
@@ -91,8 +89,9 @@ export function useAdminData() {
   // Form states
   const [newPost, setNewPost] = useState({ title: "", description: "", link: "" });
   const [newAsset, setNewAsset] = useState<{ title: string; description: string; gdriveLink: string; type: "image" | "video" | "banner"; category: string }>({ title: "", description: "", gdriveLink: "", type: "image", category: "" });
-  const [newRecording, setNewRecording] = useState({ title: "", description: "", gdriveLink: "", recordingDate: "", thumbnailUrl: "", duration: "" });
-  const [newAnnouncement, setNewAnnouncement] = useState<{ title: string; content: string; priority: "low" | "medium" | "high" }>({ title: "", content: "", priority: "medium" });
+  const [assetFiles, setAssetFiles] = useState<File[]>([]);
+  const [newRecording, setNewRecording] = useState({ title: "", description: "", gdriveLink: "" });
+  const [newAnnouncement, setNewAnnouncement] = useState<{ title: string; content: string; priority: "CRITICAL" | "GENERAL" | "CONTENT_FOCUS" }>({ title: "", content: "", priority: "GENERAL" });
   
   // Search states
   const [postSearch, setPostSearch] = useState("");
@@ -124,22 +123,27 @@ export function useAdminData() {
   const fetchPosts = async () => {
     try {
       const postsRes = await fetch("/api/posts?showAll=true&showClosed=false");
-      const postsData = await postsRes.json();
+      const postsData: Post[] = await postsRes.json();
 
-      const postsWithSyncedVotes = await Promise.all(
-        postsData.map(async (post: Post) => {
-          try {
-            const votesRes = await fetch(`/api/votes?postId=${post._id}`);
-            const votesData = await votesRes.json();
-            return { ...post, votes: votesData.count || 0 };
-          } catch (err) {
-            console.error(`Failed to sync votes for post ${post._id}:`, err);
-            return post;
-          }
-        })
-      );
+      // Avoid N+1 requests by using the aggregated sync endpoint to fetch
+      // vote counts for all posts in a single call.
+      let postsWithVotes = postsData;
+      try {
+        const syncRes = await fetch("/api/votes?sync=true");
+        if (syncRes.ok) {
+          const syncData = await syncRes.json();
+          const counts: Record<string, number> = syncData.counts || {};
+          postsWithVotes = postsData.map((post) => ({
+            ...post,
+            votes:
+              typeof counts[post._id] === "number" ? counts[post._id] : post.votes,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to sync votes for posts:", err);
+      }
 
-      setPosts(postsWithSyncedVotes);
+      setPosts(postsWithVotes);
     } catch (err) {
       console.error("Failed to fetch posts:", err);
     }
@@ -177,10 +181,20 @@ export function useAdminData() {
 
   const fetchContentSubmissions = async () => {
     try {
+      // For admins, try to sync impressions from Twitter/X before fetching
+      if (session?.user?.isAdmin) {
+        try {
+          await fetch("/api/content-submissions/sync-impressions", {
+            method: "POST",
+          });
+        } catch (err) {
+          console.error("Failed to sync impressions:", err);
+        }
+      }
+
       const response = await fetch("/api/content-submissions");
       const data = await response.json();
-      console.log("Fetched content submissions:", data);
-      setContentSubmissions(data);
+			setContentSubmissions(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch content submissions:", err);
     }
@@ -318,18 +332,54 @@ export function useAdminData() {
   };
 
   // Asset CRUD operations
-  const addAsset = async (e: React.FormEvent) => {
+  const addAsset = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/assets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newAsset),
-      });
-      const asset = await res.json();
-      if (asset._id) {
-        setAssets(prev => [...prev, asset]);
+      const createdAssets: Asset[] = [];
+
+      if (assetFiles.length > 0) {
+        for (const file of assetFiles) {
+          const formData = new FormData();
+          formData.append("title", newAsset.title);
+          formData.append("description", newAsset.description);
+          formData.append("type", newAsset.type);
+          formData.append("category", newAsset.category);
+          formData.append("file", file);
+
+          const res = await fetch("/api/assets", {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) continue;
+          const asset = await res.json();
+          if (asset && asset._id) {
+            createdAssets.push(asset as Asset);
+          }
+        }
+      } else if (newAsset.gdriveLink) {
+        const formData = new FormData();
+        formData.append("title", newAsset.title);
+        formData.append("description", newAsset.description);
+        formData.append("type", newAsset.type);
+        formData.append("category", newAsset.category);
+        formData.append("gdriveLink", newAsset.gdriveLink);
+
+        const res = await fetch("/api/assets", {
+          method: "POST",
+          body: formData,
+        });
+        if (res.ok) {
+          const asset = await res.json();
+          if (asset && asset._id) {
+            createdAssets.push(asset as Asset);
+          }
+        }
+      }
+
+      if (createdAssets.length > 0) {
+        setAssets(prev => [...prev, ...createdAssets]);
         setNewAsset({ title: "", description: "", gdriveLink: "", type: "image", category: "" });
+        setAssetFiles([]);
       }
     } catch (err) {
       console.error("Add asset error:", err);
@@ -353,12 +403,16 @@ export function useAdminData() {
       const res = await fetch("/api/townhall-recordings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newRecording),
+        body: JSON.stringify({
+          title: newRecording.title,
+          description: newRecording.description,
+          gdriveLink: newRecording.gdriveLink,
+        }),
       });
       const recording = await res.json();
       if (recording._id) {
         setRecordings(prev => [...prev, recording]);
-        setNewRecording({ title: "", description: "", gdriveLink: "", recordingDate: "", thumbnailUrl: "", duration: "" });
+        setNewRecording({ title: "", description: "", gdriveLink: "" });
       }
     } catch (err) {
       console.error("Add recording error:", err);
@@ -387,7 +441,7 @@ export function useAdminData() {
       const announcement = await res.json();
       if (announcement._id) {
         setAnnouncements(prev => [...prev, announcement]);
-        setNewAnnouncement({ title: "", content: "", priority: "medium" });
+			setNewAnnouncement({ title: "", content: "", priority: "GENERAL" });
       }
     } catch (err) {
       console.error("Add announcement error:", err);
@@ -471,6 +525,10 @@ export function useAdminData() {
     fetchVotingStatus();
   }, [status, session]);
 
+  useEffect(() => {
+    fetchContentSubmissions();
+  }, []);
+
   return {
     // Data
     users,
@@ -485,6 +543,8 @@ export function useAdminData() {
     setNewPost,
     newAsset,
     setNewAsset,
+    assetFiles,
+    setAssetFiles,
     newRecording,
     setNewRecording,
     newAnnouncement,

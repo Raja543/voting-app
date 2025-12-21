@@ -4,21 +4,10 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  username?: string;
-  bio?: string;
-  walletAddress?: string;
-  website?: string;
-  location?: string;
   image?: string;
   provider: string;
   isAdmin: boolean;
   isWhitelisted: boolean;
-  socialLinks?: {
-    twitter?: string;
-    github?: string;
-    linkedin?: string;
-    discord?: string;
-  };
 }
 
 interface UsersTabProps {
@@ -27,7 +16,7 @@ interface UsersTabProps {
   setUserSearch: (search: string) => void;
   whitelistUser: (email: string) => void;
   removeWhitelist: (email: string) => void;
-  viewUserDetails: (user: User) => void;
+  viewUserDetails: (user: User) => void | Promise<void>;
 }
 
 export default function UsersTab({
@@ -39,65 +28,129 @@ export default function UsersTab({
   viewUserDetails,
 }: UsersTabProps) {
   const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-      user.email.toLowerCase().includes(userSearch.toLowerCase())
+    (u) =>
+      u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.email.toLowerCase().includes(userSearch.toLowerCase())
   );
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700">
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-xl font-semibold text-blue-400">Users</h2>
+    <div className="bg-[#11161c] border border-gray-800 overflow-x-hidden">
+
+      {/* Header */}
+      <div className="p-4 border-b border-gray-800">
+        <h2 className="text-[#3aa0d8] text-xs sm:text-sm mb-2">
+          Users
+        </h2>
         <input
-          type="text"
-          placeholder="Search users..."
+          placeholder="Search users"
           value={userSearch}
           onChange={(e) => setUserSearch(e.target.value)}
-          className="mt-4 w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
+          className="
+            w-full
+            bg-[#0b0f14]
+            px-3 py-2
+            text-xs sm:text-sm
+            text-white
+            border border-gray-700
+            focus:outline-none
+          "
         />
       </div>
-      <div className="max-h-96 overflow-y-auto">
+
+      {/* Users List */}
+      <div className="divide-y divide-gray-800 max-h-[520px] overflow-y-auto">
         {filteredUsers.map((user) => (
-          <div key={user._id} className="p-4 border-b border-gray-700 last:border-b-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                  {user.name?.[0]?.toUpperCase()}
+          <div
+            key={user._id}
+            className="
+              p-4
+              grid
+              grid-cols-[3fr_1fr]
+              md:flex
+              md:items-center
+              md:justify-between
+              gap-4
+            "
+          >
+            {/* LEFT — User Info (3/4 on mobile) */}
+            <div className="flex gap-4 min-w-0">
+              {/* Avatar */}
+              <div className="w-16 h-16 bg-gray-500 shrink-0" />
+
+              {/* Info */}
+              <div className="min-w-0">
+                <div className="text-white text-sm sm:text-base font-medium break-words">
+                  {user.name}
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-100">{user.name}</p>
-                  <p className="text-sm text-gray-400">{user.email}</p>
-                  <div className="flex gap-2 mt-1">
-                    {user.isAdmin && (
-                      <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full">Admin</span>
-                    )}
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      user.isWhitelisted ? "bg-green-600 text-white" : "bg-gray-600 text-white"
-                    }`}>
-                      {user.isWhitelisted ? "Whitelisted" : "Not Whitelisted"}
+
+                <div className="text-gray-400 text-xs sm:text-sm break-all">
+                  {user.email}
+                </div>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {user.isAdmin && (
+                    <span className="bg-[#027DA4] text-white text-[10px] sm:text-xs px-2 py-[2px]">
+                      admin
                     </span>
-                  </div>
+                  )}
+                  {user.isWhitelisted && (
+                    <span className="bg-[#10B981] text-white text-[10px] sm:text-xs px-2 py-[2px]">
+                      whitelisted
+                    </span>
+                  )}
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => viewUserDetails(user)}
-                  className="px-3 py-1 rounded-lg font-semibold text-white bg-purple-600 hover:bg-purple-700 transition"
-                >
-                  Details
-                </button>
-                <button
-                  onClick={() => user.isWhitelisted ? removeWhitelist(user.email) : whitelistUser(user.email)}
-                  className={`px-3 py-1 rounded-lg font-semibold text-white transition ${
-                    user.isWhitelisted ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"
-                  }`}
-                >
-                  {user.isWhitelisted ? "Remove" : "Whitelist"}
-                </button>
-              </div>
+            </div>
+
+            {/* RIGHT — Actions */}
+            <div
+              className="
+                flex
+                flex-col
+                gap-2
+                md:flex-row
+                md:gap-3
+                md:items-center
+                md:justify-end
+              "
+            >
+              <button
+                onClick={() => viewUserDetails(user)}
+                className="
+                  bg-[#027DA4] hover:bg-[#016381]
+                  text-white
+                  text-[10px] sm:text-xs md:text-sm
+                  px-4 py-1
+                "
+              >
+                Details
+              </button>
+
+              <button
+                onClick={() =>
+                  user.isWhitelisted
+                    ? removeWhitelist(user.email)
+                    : whitelistUser(user.email)
+                }
+                className="
+                  bg-[#E40041] hover:bg-[#B0003A]
+                  text-white
+                  text-[10px] sm:text-xs md:text-sm
+                  px-4 py-1
+                "
+              >
+                {user.isWhitelisted ? "Remove" : "Whitelist"}
+              </button>
             </div>
           </div>
         ))}
+
+        {filteredUsers.length === 0 && (
+          <div className="p-6 text-gray-500 text-xs sm:text-sm">
+            No users found
+          </div>
+        )}
       </div>
     </div>
   );

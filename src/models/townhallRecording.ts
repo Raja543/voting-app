@@ -5,8 +5,6 @@ export interface ITownhallRecording extends Document {
   description?: string;
   gdriveLink: string;
   recordingDate: Date;
-  thumbnailUrl?: string;
-  duration?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,14 +28,7 @@ const TownhallRecordingSchema = new Schema<ITownhallRecording>(
     recordingDate: {
       type: Date,
       required: true,
-    },
-    thumbnailUrl: {
-      type: String,
-      trim: true,
-    },
-    duration: {
-      type: String,
-      trim: true,
+      default: Date.now,
     },
   },
   {

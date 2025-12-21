@@ -15,14 +15,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const {
-      title,
-      description,
-      gdriveLink,
-      recordingDate,
-      thumbnailUrl,
-      duration,
-    } = await request.json();
+    const { title, description, gdriveLink } = await request.json();
 
     await dbConnect();
 
@@ -34,9 +27,6 @@ export async function PUT(
         title,
         description,
         gdriveLink,
-        recordingDate: recordingDate ? new Date(recordingDate) : undefined,
-        thumbnailUrl,
-        duration,
       },
       { new: true }
     );

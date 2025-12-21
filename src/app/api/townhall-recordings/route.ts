@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, gdriveLink, recordingDate, thumbnailUrl, duration } = await request.json();
+    const { title, description, gdriveLink } = await request.json();
 
-    if (!title || !gdriveLink || !recordingDate) {
+    if (!title || !gdriveLink) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -34,9 +34,8 @@ export async function POST(request: NextRequest) {
       title,
       description,
       gdriveLink,
-      recordingDate: new Date(recordingDate),
-      thumbnailUrl,
-      duration,
+      // Explicitly set recordingDate to now to satisfy required validation
+      recordingDate: new Date(),
     });
 
     await recording.save();

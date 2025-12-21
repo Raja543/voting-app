@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useSession } from "next-auth/react";
-import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import VoteButton from "@/components/VoteButton";
 import VotingCountdown from "@/components/VotingCountdown";
 
@@ -14,159 +14,185 @@ interface Post {
   link?: string;
 }
 
-// Memoized PostCard component to prevent unnecessary re-renders
-const PostCard = memo(({ post, voteStatus, userTotalVotes, onVoteSuccess }: {
+/* ----------------------------- Post Card ----------------------------- */
+
+const PostCard = memo(function PostCard({
+  post,
+  hasVoted,
+  userTotalVotes,
+  onVoteSuccess,
+}: {
   post: Post;
-  voteStatus: Record<string, boolean>;
+  hasVoted: boolean;
   userTotalVotes: number;
   onVoteSuccess: (postId: string) => void;
-}) => (
-  <div className="bg-gray-800 rounded-xl shadow-md border border-gray-700 hover:border-blue-500 hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col h-full">
-    <div className="p-5 flex-1 flex flex-col">
-      <h3 className="text-lg font-bold mb-2 text-blue-400 line-clamp-1">{post.title}</h3>
-      <p className="text-gray-300 text-sm mb-3 leading-snug line-clamp-3">{post.description}</p>
+}) {
+  return (
+    <div className="bg-[#161B22] border border-[#1f2933] p-4 flex flex-col min-h-[170px]">
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-medium text-[#027DA4] truncate">
+          {post.title}
+        </h3>
+        <p className="mt-2 text-xs text-gray-400 leading-relaxed line-clamp-2 break-words">
+          {post.description}
+        </p>
+      </div>
 
-      {post.link && (
-        <a
-          href={post.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center text-sm font-medium text-green-400 hover:text-green-300 transition"
-        >
-          🔗 Visit Link
-        </a>
-      )}
-      <div className="flex-1" /> {/* pushes vote section to bottom */}
+      {/* Actions */}
+      <div className="mt-4 flex flex-wrap items-center gap-2 justify-between">
+        {/* POST */}
+        {post.link ? (
+          <a
+            href={post.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 bg-[#027DA4] hover:bg-[#026b8f] px-3 py-1 text-xs text-white"
+          >
+            ✕ POST
+          </a>
+        ) : (
+          <span className="shrink-0 bg-[#027DA4]/40 px-3 py-1 text-xs text-white/60">
+            ✕ POST
+          </span>
+        )}
+
+        {/* VOTE */}
+        <div className="shrink-0">
+          <VoteButton
+            postId={post._id}
+            hasVoted={hasVoted}
+            userTotalVotes={userTotalVotes}
+            onVoted={() => onVoteSuccess(post._id)}
+          />
+        </div>
+      </div>
     </div>
+  );
+});
 
-    <div className="p-4 border-t border-gray-700 flex flex-col items-center gap-2">
-      <VoteButton 
-        postId={post._id} 
-        hasVoted={voteStatus[post._id] || false}
-        userTotalVotes={userTotalVotes}
-        onVoted={() => onVoteSuccess(post._id)} 
-      />
-    </div>
-  </div>
-));
-
-PostCard.displayName = 'PostCard';
+/* ----------------------------- Main Page ----------------------------- */
 
 const Postlist = memo(function Postlist() {
+  const { data: session, status } = useSession();
+
   const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
   const [voteStatus, setVoteStatus] = useState<Record<string, boolean>>({});
   const [userTotalVotes, setUserTotalVotes] = useState(0);
   const [isVotingActive, setIsVotingActive] = useState(false);
-  const { data: session, status } = useSession();
+  const [currentPeriod, setCurrentPeriod] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch posts, vote status, and voting status in parallel
         const [postsRes, votesRes, votingStatusRes] = await Promise.all([
           fetch("/api/posts"),
-          session?.user?.email ? fetch("/api/votes?allPosts=true") : Promise.resolve(null),
-          fetch("/api/voting-status")
+          session?.user?.email
+            ? fetch("/api/votes?allPosts=true")
+            : Promise.resolve(null),
+          fetch("/api/voting-status"),
         ]);
 
-        const postsData: Post[] = await postsRes.json();
-        setPosts(postsData.map(post => ({ ...post, _id: post._id.toString() })));
+        setPosts(await postsRes.json());
 
-        // Handle vote status if user is logged in
-        if (votesRes && votesRes.ok) {
-          const votesData = await votesRes.json();
-          setVoteStatus(votesData.voteStatus || {});
-          setUserTotalVotes(votesData.userTotalVotes || 0);
-        } else {
-          setVoteStatus({});
-          setUserTotalVotes(0);
+        if (votesRes?.ok) {
+          const votes = await votesRes.json();
+          setVoteStatus(votes.voteStatus || {});
+          setUserTotalVotes(votes.userTotalVotes || 0);
         }
 
-        // Handle voting status
-        if (votingStatusRes && votingStatusRes.ok) {
-          const votingStatusData = await votingStatusRes.json();
-          setIsVotingActive(votingStatusData.isVotingActive);
+        if (votingStatusRes.ok) {
+          const s = await votingStatusRes.json();
+          setIsVotingActive(s.isVotingActive);
+          setCurrentPeriod(s.currentPeriod);
         }
-
-        // After loading posts and voting status, fetch authoritative vote counts
-        // to ensure UI is fully synced with DB. This calls the new sync endpoint
-        // which reads directly from the Vote collection for the active session.
-        try {
-          const syncRes = await fetch('/api/votes?sync=true');
-          if (syncRes.ok) {
-            const syncData = await syncRes.json();
-            if (syncData?.counts) {
-              setPosts(prevPosts => prevPosts.map(p => ({
-                ...p,
-                votes: typeof syncData.counts[p._id] === 'number' ? syncData.counts[p._id] : p.votes
-              })));
-            }
-          }
-        } catch (syncErr) {
-          // Non-fatal: if sync fails, keep previously loaded post counts
-          console.error('Failed to sync votes:', syncErr);
-        }
-      } catch (err) {
-        console.error("Failed to fetch data:", err);
+      } catch {
         setPosts([]);
-        setVoteStatus({});
-        setUserTotalVotes(0);
-        setIsVotingActive(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-    // Also re-fetch when session status changes (login/logout)
-    // status: "loading" | "authenticated" | "unauthenticated"
-    // This ensures UI is always in sync after login/logout
   }, [session?.user?.email, status]);
 
-  // Memoize posts to prevent unnecessary re-renders
+  const handleVoteSuccess = useCallback((postId: string) => {
+    setVoteStatus((p) => ({ ...p, [postId]: true }));
+    setUserTotalVotes((v) => v + 1);
+  }, []);
+
   const memoizedPosts = useMemo(() => posts, [posts]);
 
-  const handleVoteSuccess = useCallback((postId: string) => {
-    setPosts(prevPosts =>
-      prevPosts.map(post =>
-        post._id === postId ? { ...post, votes: post.votes + 1 } : post
-      )
+  // Compute previous month label from currentPeriod (e.g. "December 2025" -> "November 2025")
+  const previousPeriod = useMemo(() => {
+    if (!currentPeriod) return null;
+
+    const parts = currentPeriod.split(" ");
+    if (parts.length < 2) return null;
+
+    const monthName = parts[0];
+    const yearNum = Number(parts[1]);
+    if (!yearNum) return null;
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const idx = monthNames.findIndex(
+      (m) => m.toLowerCase() === monthName.toLowerCase()
     );
-    // Update vote status locally
-    setVoteStatus(prev => ({ ...prev, [postId]: true }));
-    setUserTotalVotes(prev => prev + 1);
-  }, []);
+    if (idx === -1) return null;
+
+    let prevIdx = idx - 1;
+    let prevYear = yearNum;
+    if (prevIdx < 0) {
+      prevIdx = 11;
+      prevYear -= 1;
+    }
+
+    return `${monthNames[prevIdx]} ${prevYear}`;
+  }, [currentPeriod]);
 
   return (
     <>
-      <Navbar />
+      <Sidebar />
 
-      <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-extrabold mb-10 text-center text-white tracking-tight">
-            Vote for Your Favorites
-          </h1>
-          
-          <VotingCountdown />
-
-          {!isVotingActive ? (
-            // When voting is inactive, don't show "No posts available" or voting tip
-            null
-          ) : loading ? (
-            null
-          ) : memoizedPosts.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-2xl text-gray-500">No posts available</p>
+      <div className="min-h-screen bg-[#0b0f14] text-gray-100 px-4 py-6">
+        <div className="mx-auto max-w-[1600px]">
+          {/* Header */}
+          <div className="mb-6 text-center space-y-3">
+            <div className="flex flex-wrap items-center justify-center gap-2 text-base sm:text-lg font-semibold">
+              <span>Vote for your favorite content from</span>
+              {previousPeriod && (
+                <span className="px-2 py-1 text-[#027DA4] bg-[#027DA4]/10 rounded">
+                  {previousPeriod}
+                </span>
+              )}
             </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {memoizedPosts.map(post => (
+            <VotingCountdown />
+          </div>
+
+          {/* Grid */}
+          {!isVotingActive || loading ? null : (
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {memoizedPosts.map((post) => (
                 <PostCard
                   key={post._id}
                   post={post}
-                  voteStatus={voteStatus}
+                  hasVoted={!!voteStatus[post._id]}
                   userTotalVotes={userTotalVotes}
                   onVoteSuccess={handleVoteSuccess}
                 />
@@ -174,11 +200,11 @@ const Postlist = memo(function Postlist() {
             </div>
           )}
 
+          {/* Footer Hint */}
           {session?.user?.email && !session.user.isAdmin && isVotingActive && (
-            <div className="mt-10 bg-blue-900/30 border border-blue-700 rounded-lg p-5 text-center">
-              <p className="text-blue-300 font-medium text-lg">
-                💡 You can vote for up to 2 different posts. Choose wisely!
-              </p>
+            <div className="mt-8 text-center text-xs text-gray-500">
+              You can vote for up to{" "}
+              <span className="text-[#10B981] font-medium">2</span> posts
             </div>
           )}
         </div>

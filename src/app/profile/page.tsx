@@ -2,362 +2,239 @@
 
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar";
-
-interface UserProfile {
-  _id: string;
-  name: string;
-  email: string;
-  username?: string;
-  bio?: string;
-  walletAddress?: string;
-  website?: string;
-  location?: string;
-  image?: string;
-  provider: string;
-  isAdmin: boolean;
-  isWhitelisted: boolean;
-  socialLinks?: {
-    twitter?: string;
-    github?: string;
-    linkedin?: string;
-    discord?: string;
-  };
-}
+import Image from "next/image";
+import Sidebar from "@/components/Sidebar";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [profileError, setProfileError] = useState<string>("");
-  useEffect(() => {
-    if (status !== "authenticated" || !session?.user?.email) return;
-    fetch("/api/users/profile")
-      .then(res => res.ok ? res.json() : Promise.reject("Failed to fetch profile"))
-      .then(data => setProfile(data.user || null))
-      .catch(() => setProfileError("Failed to load profile."));
-  }, [status, session]);
+
   const [formData, setFormData] = useState({
-    name: "",
+    displayName: "",
     username: "",
     bio: "",
-    walletAddress: "",
-    website: "",
-    location: "",
-    socialLinks: {
-      twitter: "",
-      github: "",
-      linkedin: "",
-      discord: "",
-    },
-    currentPassword: "",
+    abstractWallet: "",
+    evmWallet: "",
+    discord: "",
+    twitter: "",
+    youtube: "",
+    oldPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    if (profile) {
-      setFormData({
-        name: profile.name || "",
-        username: profile.username || "",
-        bio: profile.bio || "",
-        walletAddress: profile.walletAddress || "",
-        website: profile.website || "",
-        location: profile.location || "",
-        socialLinks: {
-          twitter: profile.socialLinks?.twitter || "",
-          github: profile.socialLinks?.github || "",
-          linkedin: profile.socialLinks?.linkedin || "",
-          discord: profile.socialLinks?.discord || "",
-        },
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-    }
-  }, [profile]);
+    if (!session?.user) return;
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setFormData((p) => ({
+      ...p,
+      displayName: session.user.name || "",
+      username: session.user.username || "",
+    }));
+  }, [session]);
+
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
     const { name, value } = e.target;
-    if (name.startsWith("socialLinks.")) {
-      const key = name.split(".")[1];
-      setFormData(prev => ({
-        ...prev,
-        socialLinks: {
-          ...prev.socialLinks,
-          [key]: value,
-        },
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    setFormData((p) => ({ ...p, [name]: value }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
+  if (status === "loading") return null;
 
-    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-      setError("New passwords do not match.");
-      return;
-    }
+  const userName =
+    session?.user?.name || session?.user?.username || "Creator";
+  const userEmail = session?.user?.email || "";
 
-    setSaving(true);
-
-    try {
-      const res = await fetch("/api/users/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          username: formData.username,
-          bio: formData.bio,
-          walletAddress: formData.walletAddress,
-          website: formData.website,
-          location: formData.location,
-          socialLinks: formData.socialLinks,
-          ...(formData.newPassword ? { currentPassword: formData.currentPassword, newPassword: formData.newPassword } : {}),
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setSuccess("Profile updated successfully.");
-        setFormData(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
-      } else {
-        setError(data.error || "Failed to update profile.");
-      }
-    } catch {
-      setError("Network error, please try again.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (status === "loading") {
-    return null;
-  }
-
-  if (!session) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-          <div className="text-center p-6 bg-gray-800 rounded border border-gray-700">
-            <h2 className="text-2xl font-bold mb-4 text-red-400">Access Denied</h2>
-            <p>Please log in to view profile.</p>
-            <a href="/login" className="inline-block mt-4 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white">
-              Login
-            </a>
-          </div>
-        </div>
-      </>
-    );
-  }
+  const tags: string[] = [];
+  if (session?.user?.isWhitelisted) tags.push("Whitelisted");
+  if (session?.user?.isAdmin) tags.push("Admin");
 
   return (
     <>
-      <Navbar />
-      <main className="min-h-screen bg-gray-900 py-10 text-white">
-        <div className="max-w-4xl mx-auto bg-gray-800 rounded shadow p-8">
-          {/* User info */}
-          <div className="flex items-center mb-8 space-x-6">
-            {profile?.image && (
-              <img src={profile.image} alt="User image" className="w-24 h-24 rounded-full border border-gray-600" />
-            )}
-            <div>
-              <h1 className="text-4xl font-bold">{profile?.name}</h1>
-              <p className="text-gray-400">{profile?.username ? `@${profile.username}` : profile?.email}</p>
-              <div className="mt-2 space-x-2">
-                <span className="inline-block px-3 py-1 text-xs bg-blue-600 rounded">{profile?.provider}</span>
-                {profile?.isAdmin && <span className="inline-block px-3 py-1 text-xs bg-green-600 rounded">Admin</span>}
-                {profile?.isWhitelisted ? (
-                  <span className="inline-block px-3 py-1 text-xs bg-green-600 rounded">Whitelisted</span>
-                ) : (
-                  <span className="inline-block px-3 py-1 text-xs bg-yellow-600 rounded">Not Whitelisted</span>
-                )}
-              </div>
-            </div>
-          </div>
+      <Sidebar />
 
-          {/* Edit form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name & Username */}
+      <div className="min-h-screen bg-[#0b0f14] flex justify-center px-4 sm:px-6">
+        <div className="w-full max-w-5xl py-10">
+
+          {status === "unauthenticated" ? (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-white/60 text-sm">
+              <div>You need to login first to view your profile.</div>
+              <a
+                href="/login"
+                className="px-4 py-2 bg-[#10B981] hover:bg-[#059669] text-white text-xs font-medium rounded"
+              >
+                Login
+              </a>
+            </div>
+          ) : (
+            <>
+              {/* Header */}
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-[#3aa0d8] text-xl sm:text-2xl break-words">
+                    {userName}
+                  </h1>
+                  {userEmail && (
+                    <div className="text-sm text-white break-words">
+                      {userEmail}
+                    </div>
+                  )}
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-xs bg-[#3aa0d8] px-2 py-[4px] text-white"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Form Container */}
+              <div className="bg-[#11161c] border border-gray-800 p-4 sm:p-6 space-y-6">
+
+            {/* Display Name + Username */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block mb-2 font-semibold">Full Name</label>
+                <label className="text-sm text-[#3aa0d8]">Display Name</label>
                 <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
+                  name="displayName"
+                  value={formData.displayName}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-700 rounded border border-gray-600 text-white"
-                  required
+                  className="w-full mt-2 bg-[#0b0f14] border border-gray-700 px-3 py-2 text-white"
                 />
               </div>
               <div>
-                <label className="block mb-2 font-semibold">Username</label>
+                <label className="text-sm text-[#3aa0d8]">Username</label>
                 <input
-                  type="text"
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-700 rounded border border-gray-600 text-white"
+                  className="w-full mt-2 bg-[#0b0f14] border border-gray-700 px-3 py-2 text-white"
                 />
-                <small className="text-gray-400">3-20 chars, letters/numbers/_ only</small>
               </div>
             </div>
 
             {/* Bio */}
             <div>
-              <label className="block mb-2 font-semibold">Bio</label>
+              <label className="text-sm text-[#3aa0d8]">Bio</label>
               <textarea
                 name="bio"
                 value={formData.bio}
                 onChange={handleChange}
-                className="w-full p-3 bg-gray-700 rounded border border-gray-600 text-white"
                 rows={3}
-                maxLength={500}
-                placeholder="Tell us about yourself"
+                className="w-full mt-2 bg-[#0b0f14] border border-gray-700 px-3 py-2 text-white"
               />
             </div>
 
-            {/* Wallet & Website */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block mb-2 font-semibold">Wallet Address</label>
-                <input
-                  type="text"
-                  name="walletAddress"
-                  value={formData.walletAddress}
-                  onChange={handleChange}
-                  className="w-full p-3 bg-gray-700 rounded border border-gray-600 text-white"
-                  placeholder="0x..."
-                />
-              </div>
-              <div>
-                <label className="block mb-2 font-semibold">Website</label>
-                <input
-                  type="url"
-                  name="website"
-                  value={formData.website}
-                  onChange={handleChange}
-                  className="w-full p-3 bg-gray-700 rounded border border-gray-600 text-white"
-                  placeholder="https://example.com"
-                />
-              </div>
-            </div>
-
-            {/* Location */}
+            {/* Wallets */}
             <div>
-              <label className="block mb-2 font-semibold">Location</label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                className="w-full p-3 bg-gray-700 rounded border border-gray-600 text-white"
-                placeholder="City, Country"
-              />
+              <label className="text-sm text-[#3aa0d8]">Wallets</label>
+
+              <div className="mt-2 space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-[#10B981]">ABSTRACT</span>
+                  <input
+                    name="abstractWallet"
+                    value={formData.abstractWallet}
+                    onChange={handleChange}
+                    placeholder="AGW"
+                    className="flex-1 min-w-0 bg-[#0b0f14] border border-gray-700 px-3 py-2 text-white truncate"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-400">EVM</span>
+                  <input
+                    name="evmWallet"
+                    value={formData.evmWallet}
+                    onChange={handleChange}
+                    placeholder="0x..."
+                    className="flex-1 min-w-0 bg-[#0b0f14] border border-gray-700 px-3 py-2 text-white truncate"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Social Links */}
+            {/* Socials */}
             <div>
-              <label className="block mb-4 font-semibold">Social Links</label>
-              <input
-                type="url"
-                name="socialLinks.twitter"
-                placeholder="Twitter URL"
-                value={formData.socialLinks.twitter}
-                onChange={handleChange}
-                className="w-full p-3 mb-2 bg-gray-700 rounded border border-gray-600 text-white"
-              />
-              <input
-                type="url"
-                name="socialLinks.github"
-                placeholder="GitHub URL"
-                value={formData.socialLinks.github}
-                onChange={handleChange}
-                className="w-full p-3 mb-2 bg-gray-700 rounded border border-gray-600 text-white"
-              />
-              <input
-                type="url"
-                name="socialLinks.linkedin"
-                placeholder="LinkedIn URL"
-                value={formData.socialLinks.linkedin}
-                onChange={handleChange}
-                className="w-full p-3 mb-2 bg-gray-700 rounded border border-gray-600 text-white"
-              />
-              <input
-                type="text"
-                name="socialLinks.discord"
-                placeholder="Discord Username"
-                value={formData.socialLinks.discord}
-                onChange={handleChange}
-                className="w-full p-3 bg-gray-700 rounded border border-gray-600 text-white"
-              />
+              <label className="text-sm text-[#3aa0d8]">Socials</label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
+                {/* Discord */}
+                <div className="flex items-center gap-2 bg-[#0b0f14] border border-gray-700 px-3 py-2">
+                  <Image
+                    src="/discord.png"
+                    alt="Discord"
+                    width={20}
+                    height={20}
+                    className="shrink-0"
+                  />
+                  <input
+                    name="discord"
+                    placeholder="Discord"
+                    value={formData.discord}
+                    onChange={handleChange}
+                    className="flex-1 bg-transparent outline-none text-white text-sm placeholder:text-gray-500"
+                  />
+                </div>
+
+                {/* X / Twitter */}
+                <div className="flex items-center gap-2 bg-[#0b0f14] border border-gray-700 px-3 py-2">
+                  <Image
+                    src="/x.png"
+                    alt="X / Twitter"
+                    width={20}
+                    height={20}
+                    className="shrink-0"
+                  />
+                  <input
+                    name="twitter"
+                    placeholder="X / Twitter"
+                    value={formData.twitter}
+                    onChange={handleChange}
+                    className="flex-1 bg-transparent outline-none text-white text-sm placeholder:text-gray-500"
+                  />
+                </div>
+
+                {/* YouTube */}
+                <div className="flex items-center gap-2 bg-[#0b0f14] border border-gray-700 px-3 py-2">
+                  <Image
+                    src="/youtube.png"
+                    alt="YouTube"
+                    width={20}
+                    height={20}
+                    className="shrink-0"
+                  />
+                  <input
+                    name="youtube"
+                    placeholder="YouTube"
+                    value={formData.youtube}
+                    onChange={handleChange}
+                    className="flex-1 bg-transparent outline-none text-white text-sm placeholder:text-gray-500"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Password change */}
-            {profile?.provider === 'credentials' && (
-              <>
-                <hr className="my-6 border-gray-700" />
-                <h3 className="mb-4 text-xl font-semibold">Change Password</h3>
-                <input
-                  type="password"
-                  name="currentPassword"
-                  placeholder="Current Password"
-                  value={formData.currentPassword}
-                  onChange={handleChange}
-                  className="w-full p-3 mb-4 rounded border border-gray-600 bg-gray-700 text-white"
-                />
-                <input
-                  type="password"
-                  name="newPassword"
-                  placeholder="New Password"
-                  value={formData.newPassword}
-                  onChange={handleChange}
-                  className="w-full p-3 mb-4 rounded border border-gray-600 bg-gray-700 text-white"
-                />
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="Confirm New Password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="w-full p-3 mb-4 rounded border border-gray-600 bg-gray-700 text-white"
-                />
-              </>
-            )}
-
-            {/* Actions */}
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                className="px-6 py-3 bg-gray-600 rounded hover:bg-gray-700"
-                disabled={saving}
-                onClick={() => window.location.reload()}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-3 bg-blue-600 rounded hover:bg-blue-700"
-                disabled={saving}
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </form>
+                {/* Actions */}
+                <div className="flex justify-end gap-4 pt-6">
+                  <button className="px-6 py-2 bg-gray-700 text-white">
+                    CANCEL
+                  </button>
+                  <button className="px-6 py-2 bg-[#10B981] text-white">
+                    SAVE CHANGES
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
-      </main>
+      </div>
     </>
   );
 }

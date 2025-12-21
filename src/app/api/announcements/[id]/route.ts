@@ -1,46 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import Asset from "@/models/asset";
+import Announcement from "@/models/announcement";
 
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } 
+  context: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = context.params;
     const body = await request.json();
 
     await dbConnect();
-    const updatedAsset = await Asset.findByIdAndUpdate(id, body, { new: true });
+    const updatedAnnouncement = await Announcement.findByIdAndUpdate(id, body, {
+      new: true,
+    });
 
-    if (!updatedAsset) {
-      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+    if (!updatedAnnouncement) {
+      return NextResponse.json({ error: "Announcement not found" }, { status: 404 });
     }
 
-    return NextResponse.json(updatedAsset);
+    return NextResponse.json(updatedAnnouncement);
   } catch (error) {
-    console.error("Error updating asset:", error);
-    return NextResponse.json({ error: "Failed to update asset" }, { status: 500 });
+    console.error("Error updating announcement:", error);
+    return NextResponse.json({ error: "Failed to update announcement" }, { status: 500 });
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } 
+  context: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params; 
+    const { id } = context.params;
 
     await dbConnect();
-    const deletedAsset = await Asset.findByIdAndDelete(id);
+    const deletedAnnouncement = await Announcement.findByIdAndDelete(id);
 
-    if (!deletedAsset) {
-      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+    if (!deletedAnnouncement) {
+      return NextResponse.json({ error: "Announcement not found" }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting asset:", error);
-    return NextResponse.json({ error: "Failed to delete asset" }, { status: 500 });
+    console.error("Error deleting announcement:", error);
+    return NextResponse.json({ error: "Failed to delete announcement" }, { status: 500 });
   }
 }

@@ -14,8 +14,18 @@ export async function GET(request: NextRequest) {
 
     await dbConnect();
     
-    // If admin, return all submissions. If regular user, return only their submissions
-    const filter = session.user.isAdmin ? {} : { submittedBy: session.user.id || session.user.email };
+    const scope = request.nextUrl.searchParams.get("scope");
+
+    // If admin, return all submissions by default. If regular user, return
+    // only their submissions. Admins can pass ?scope=self to see only their
+    // own submissions (used by the public "Submitted posts" page).
+    let filter: Record<string, unknown> = {};
+    if (session.user.isAdmin && scope === "self") {
+      filter = { submittedBy: session.user.id || session.user.email };
+    } else if (!session.user.isAdmin) {
+      filter = { submittedBy: session.user.id || session.user.email };
+    }
+
     const submissions = await ContentSubmission.find(filter).sort({ createdAt: -1 });
     
     return NextResponse.json(submissions);

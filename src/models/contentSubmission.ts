@@ -10,6 +10,7 @@ export interface IContentSubmission extends Document {
   submittedBy: string; // User ID
   status: "pending" | "approved" | "rejected";
   adminNotes?: string;
+  impressions?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +58,10 @@ const ContentSubmissionSchema = new Schema<IContentSubmission>(
     adminNotes: {
       type: String,
       trim: true,
+    },
+    impressions: {
+      type: Number,
+      default: 0,
     },
   },
   {

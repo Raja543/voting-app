@@ -1,24 +1,18 @@
 "use client";
 
-
 interface TownhallRecording {
   _id: string;
   title: string;
   description?: string;
   gdriveLink: string;
-  recordingDate: string;
-  thumbnailUrl?: string;
-  duration?: string;
-  createdAt: string;
+  createdAt?: string;
+  authorName?: string;
 }
 
 interface NewRecording {
   title: string;
   description: string;
   gdriveLink: string;
-  recordingDate: string;
-  thumbnailUrl: string;
-  duration: string;
 }
 
 interface RecordingsTabProps {
@@ -31,7 +25,6 @@ interface RecordingsTabProps {
   setRecordingSearch: (search: string) => void;
 }
 
-
 export default function RecordingsTab({
   recordings = [],
   newRecording,
@@ -41,117 +34,126 @@ export default function RecordingsTab({
   recordingSearch,
   setRecordingSearch,
 }: RecordingsTabProps) {
-  // Defensive: filter only if recordings is an array
-  const filteredRecordings = Array.isArray(recordings)
-    ? recordings.filter(recording =>
-        (recording.title || "").toLowerCase().includes(recordingSearch.toLowerCase()) ||
-        (recording.description || "").toLowerCase().includes(recordingSearch.toLowerCase())
-      )
-    : [];
+  const filteredRecordings = recordings.filter(
+    (rec) =>
+      rec.title.toLowerCase().includes(recordingSearch.toLowerCase()) ||
+      (rec.description || "")
+        .toLowerCase()
+        .includes(recordingSearch.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
-      {/* Add Recording Form */}
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold mb-4 text-green-400">Add New Recording</h2>
-        <form onSubmit={addRecording} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      {/* ADD VIDEO */}
+      <div className="bg-[#11161c] border border-gray-800 p-4 sm:p-6">
+        <h2 className="text-xs sm:text-sm text-[#3aa0d8] mb-4">
+          Add Video
+        </h2>
+
+        <form onSubmit={addRecording} className="space-y-3">
           <input
             type="text"
-            placeholder="Recording Title"
+            placeholder="Title"
             value={newRecording.title}
-            onChange={(e) => setNewRecording({ ...newRecording, title: e.target.value })}
+            onChange={(e) =>
+              setNewRecording({ ...newRecording, title: e.target.value })
+            }
             required
-            className="rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
+            className="w-full bg-[#0b0f14] border border-gray-800 px-3 py-2 text-xs sm:text-sm text-white focus:outline-none"
           />
-          <input
-            type="datetime-local"
-            value={newRecording.recordingDate}
-            onChange={(e) => setNewRecording({ ...newRecording, recordingDate: e.target.value })}
-            required
-            className="rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
-          />
+
           <input
             type="url"
-            placeholder="GDrive Link"
+            placeholder="GDrive link"
             value={newRecording.gdriveLink}
-            onChange={(e) => setNewRecording({ ...newRecording, gdriveLink: e.target.value })}
+            onChange={(e) =>
+              setNewRecording({ ...newRecording, gdriveLink: e.target.value })
+            }
             required
-            className="rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
+            className="w-full bg-[#0b0f14] border border-gray-800 px-3 py-2 text-xs sm:text-sm text-white focus:outline-none"
           />
-          <input
-            type="url"
-            placeholder="Thumbnail URL (optional)"
-            value={newRecording.thumbnailUrl}
-            onChange={(e) => setNewRecording({ ...newRecording, thumbnailUrl: e.target.value })}
-            className="rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
-          />
-          <input
-            type="text"
-            placeholder="Duration (optional)"
-            value={newRecording.duration}
-            onChange={(e) => setNewRecording({ ...newRecording, duration: e.target.value })}
-            className="rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
-          />
+
           <textarea
-            placeholder="Description (optional)"
+            placeholder="Description"
             value={newRecording.description}
-            onChange={(e) => setNewRecording({ ...newRecording, description: e.target.value })}
-            className="md:col-span-2 rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
-            rows={2}
+            onChange={(e) =>
+              setNewRecording({ ...newRecording, description: e.target.value })
+            }
+            rows={3}
+            className="w-full bg-[#0b0f14] border border-gray-800 px-3 py-2 text-xs sm:text-sm text-white focus:outline-none"
           />
+
           <button
             type="submit"
-            className="md:col-span-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-semibold transition"
+            className="bg-[#10B981] hover:bg-[#059669] text-white px-4 py-2 text-xs sm:text-sm font-medium"
           >
-            ➕ Add Recording
+            Add Video
           </button>
         </form>
       </div>
 
-      {/* Recordings List */}
-      <div className="bg-gray-800 rounded-lg border border-gray-700">
-        <div className="p-4 border-b border-gray-700">
-          <h2 className="text-xl font-semibold text-purple-400">Recordings</h2>
+      {/* RECORDINGS LIST */}
+      <div className="bg-[#11161c] border border-gray-800 overflow-x-hidden">
+
+        {/* Search */}
+        <div className="p-3 sm:p-4 border-b border-gray-800">
           <input
             type="text"
-            placeholder="Search recordings..."
+            placeholder="Search"
             value={recordingSearch}
             onChange={(e) => setRecordingSearch(e.target.value)}
-            className="mt-4 w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
+            className="w-full bg-[#0b0f14] border border-gray-800 px-3 py-2 text-xs sm:text-sm text-white focus:outline-none"
           />
         </div>
-        <div className="max-h-96 overflow-y-auto">
+
+        {/* List */}
+        <div className="divide-y divide-gray-800">
           {filteredRecordings.length === 0 ? (
-            <div className="p-4 text-gray-400">No recordings found.</div>
+            <div className="p-6 text-gray-500 text-xs sm:text-sm">
+              No recordings found
+            </div>
           ) : (
-            filteredRecordings.map((recording) => (
-              <div key={recording._id} className="p-4 border-b border-gray-700 last:border-b-0">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-blue-400 mb-2">{recording.title}</h3>
-                    {recording.description && (
-                      <p className="text-gray-300 mb-2">{recording.description}</p>
-                    )}
-                    <div className="text-sm text-gray-400 mb-2">
-                      <span>📅 {recording.recordingDate ? new Date(recording.recordingDate).toLocaleDateString() : ""}</span>
-                      {recording.duration && (
-                        <span className="ml-4">⏱️ {recording.duration}</span>
-                      )}
-                    </div>
-                    <a
-                      href={recording.gdriveLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-400 hover:text-green-300 text-sm"
-                    >
-                      {recording.gdriveLink}
-                    </a>
-                  </div>
-                  <button
-                    onClick={() => deleteRecording(recording._id)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md font-semibold"
+            filteredRecordings.map((rec) => (
+              <div
+                key={rec._id}
+                className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6"
+              >
+                {/* CONTENT */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[#3aa0d8] text-sm sm:text-base font-medium mb-1 break-words">
+                    {rec.title}
+                  </h3>
+
+                  {rec.description && (
+                    <p className="text-gray-300 text-xs sm:text-sm mb-2 break-words">
+                      {rec.description}
+                    </p>
+                  )}
+
+                  <a
+                    href={rec.gdriveLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#10B981] text-xs sm:text-sm break-all block mb-2"
                   >
-                    Delete
+                    {rec.gdriveLink}
+                  </a>
+
+                  {rec.createdAt && (
+                    <div className="text-[10px] sm:text-xs text-gray-500">
+                      {new Date(rec.createdAt).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+
+                {/* ACTION */}
+                <div className="flex sm:items-start">
+                  <button
+                    onClick={() => deleteRecording(rec._id)}
+                    className="bg-[#E40041] hover:bg-[#B0003A] text-white px-4 py-1 text-xs sm:text-sm w-full sm:w-auto"
+                  >
+                    Remove
                   </button>
                 </div>
               </div>

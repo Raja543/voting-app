@@ -2,37 +2,42 @@
 
 import { useEffect, useState, memo } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface VoteButtonProps {
   postId: string;
   hasVoted?: boolean;
   userTotalVotes?: number;
   onVoted?: () => void;
-  disabled?: boolean;
 }
 
-const VoteButton = memo(function VoteButton({ postId, hasVoted: initialHasVoted, userTotalVotes: initialUserTotalVotes, onVoted, disabled }: VoteButtonProps) {
+const VoteButton = memo(function VoteButton({
+  postId,
+  hasVoted: initialHasVoted,
+  userTotalVotes: initialUserTotalVotes,
+  onVoted,
+}: VoteButtonProps) {
   const { data: session } = useSession();
-  
-  const [hasVoted, setHasVoted] = useState(initialHasVoted || false);
-  const [userTotalVotes, setUserTotalVotes] = useState(initialUserTotalVotes || 0);
-  const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
 
-  // Update state when props change
+  const [hasVoted, setHasVoted] = useState(!!initialHasVoted);
+  const [userTotalVotes, setUserTotalVotes] = useState(initialUserTotalVotes || 0);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    setHasVoted(initialHasVoted || false);
+    setHasVoted(!!initialHasVoted);
     setUserTotalVotes(initialUserTotalVotes || 0);
   }, [initialHasVoted, initialUserTotalVotes]);
 
   const handleVote = async () => {
-    if (hasVoted || disabled || submitting) return;
+    if (loading || hasVoted || userTotalVotes >= 2) return;
 
     if (!session?.user?.email) {
-      alert("Please log in to vote.");
+      router.push("/login");
       return;
     }
 
-    setSubmitting(true);
+    setLoading(true);
     try {
       const res = await fetch("/api/votes", {
         method: "POST",
@@ -40,58 +45,45 @@ const VoteButton = memo(function VoteButton({ postId, hasVoted: initialHasVoted,
         body: JSON.stringify({ postId }),
       });
 
-      const data = await res.json();
-
       if (res.ok) {
         setHasVoted(true);
-        setUserTotalVotes(prev => prev + 1);
+        setUserTotalVotes((v) => v + 1);
         onVoted?.();
-      } else {
-        alert(data.error || "Error voting");
       }
-    } catch (err) {
-      console.error("Vote error:", err);
-      alert("Error voting. Please try again.");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
+  /* --------------------------- Button State --------------------------- */
+
+  let label = "Vote";
+  let disabled = false;
+  let classes =
+    "px-3 py-1 text-xs font-medium whitespace-nowrap transition rounded";
 
   if (!session?.user?.email) {
-    return (
-      <button disabled className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed">
-        Login to Vote
-      </button>
-    );
-  }
-
-  // Determine button state
-  let buttonText = "Vote";
-  let buttonClass = "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition";
-  let isDisabled = false;
-
-  if (hasVoted) {
-    buttonText = "✓ Voted";
-    buttonClass = "bg-green-600 text-white px-4 py-2 rounded cursor-not-allowed";
-    isDisabled = true;
+    label = "Login to Vote";
+    classes += " bg-[#10B981] hover:bg-[#0ea371] text-white";
+  } else if (hasVoted) {
+    label = "✓ Voted";
+    disabled = true;
+    classes += " bg-[#10B981] text-white opacity-60 cursor-not-allowed";
   } else if (userTotalVotes >= 2) {
-    buttonText = "Vote Limit Reached";
-    buttonClass = "bg-red-600 text-white px-4 py-2 rounded cursor-not-allowed";
-    isDisabled = true;
-  } else if (submitting) {
-    buttonText = "Voting...";
-    buttonClass = "bg-gray-600 text-white px-4 py-2 rounded cursor-not-allowed";
-    isDisabled = true;
+    label = "Vote Limit Reached";
+    disabled = true;
+    classes += " bg-gray-600 text-white cursor-not-allowed";
+  } else if (loading) {
+    label = "Voting...";
+    disabled = true;
+    classes += " bg-gray-600 text-white cursor-not-allowed";
+  } else {
+    classes += " bg-[#10B981] hover:bg-[#0ea371] text-white";
   }
 
   return (
-    <button
-      onClick={handleVote}
-      disabled={isDisabled || disabled}
-      className={buttonClass}
-    >
-      {buttonText}
+    <button onClick={handleVote} disabled={disabled} className={classes}>
+      {label}
     </button>
   );
 });

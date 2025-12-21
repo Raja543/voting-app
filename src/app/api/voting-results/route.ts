@@ -99,15 +99,86 @@ export async function GET(req: Request) {
     await dbConnect();
     
     const url = new URL(req.url);
-    const votingPeriod = url.searchParams.get('period');
-    
-    if (!votingPeriod) {
+    const votingPeriodParam = url.searchParams.get("period");
+
+    if (!votingPeriodParam) {
       return NextResponse.json({ error: "Voting period is required" }, { status: 400 });
     }
 
-    const results = await VotingResult.find({ votingPeriod })
+    // Normalize the incoming period (trim and collapse inner spaces) so that
+    // minor formatting differences don't prevent matches with stored values.
+    const normalizedPeriod = votingPeriodParam.trim().replace(/\s+/g, " ");
+
+    const escapeRegex = (value: string) =>
+      value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const tokens = normalizedPeriod
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((t) => escapeRegex(t));
+
+    const pattern = `^\\s*${tokens.join("\\s+")}\\s*$`;
+    const periodRegex = new RegExp(pattern, "i");
+
+    let results = await VotingResult.find({
+      votingPeriod: { $regex: periodRegex },
+    })
       .sort({ rank: 1 })
-      .select('postId title description link authorEmail authorName totalVotes rank votingPeriod createdAt');
+      .select(
+        "postId title description link authorEmail authorName totalVotes rank votingPeriod createdAt"
+      );
+
+    // Fallback: if no precomputed VotingResult documents exist for this period,
+    // compute results on the fly from posts + votes so users can still see
+    // outcomes for that month.
+    if (!results || results.length === 0) {
+      const posts = await Post.find({
+        votingPeriod: { $regex: periodRegex },
+      }).sort({ createdAt: -1 });
+
+      if (posts.length === 0) {
+        return NextResponse.json([]);
+      }
+
+      const postsWithVotes = await Promise.all(
+        posts.map(async (post) => {
+          const voteCount = await Vote.countDocuments({
+            postId: post._id.toString(),
+            votingPeriod: post.votingPeriod,
+          });
+
+          return {
+            ...post.toObject(),
+            totalVotes: voteCount,
+          } as any;
+        })
+      );
+
+      const sortedPosts = postsWithVotes.sort(
+        (a, b) => b.totalVotes - a.totalVotes
+      );
+
+      results = await Promise.all(
+        sortedPosts.map(async (post: any, index: number) => {
+          const authorEmail = "unknown@example.com";
+          const authorName = "Unknown Author";
+
+          return {
+            _id: post._id?.toString?.() ?? String(index),
+            postId: post._id.toString(),
+            title: post.title,
+            description: post.description,
+            link: post.link,
+            authorEmail,
+            authorName,
+            totalVotes: post.totalVotes,
+            rank: index + 1,
+            votingPeriod: post.votingPeriod ?? normalizedPeriod,
+            createdAt: post.createdAt,
+          };
+        })
+      );
+    }
 
     return NextResponse.json(results);
 

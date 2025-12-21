@@ -17,12 +17,6 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { title, content, priority } = await request.json();
 
     if (!title || !content) {
@@ -30,11 +24,13 @@ export async function POST(request: NextRequest) {
     }
 
     await dbConnect();
+    const session = await getServerSession(authOptions);
+    const createdBy = session?.user?.id || session?.user?.email || "system";
     const announcement = new Announcement({
       title,
       content,
-      priority: priority || "medium",
-      createdBy: session.user.id || session.user.email,
+      priority: (priority as "CRITICAL" | "GENERAL" | "CONTENT_FOCUS") || "GENERAL",
+      createdBy,
     });
 
     await announcement.save();

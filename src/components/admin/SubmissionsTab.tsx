@@ -1,121 +1,223 @@
 "use client";
 
+import { useState } from "react";
+
 interface ContentSubmission {
   _id: string;
-  twitterHandle: string;
-  discordUsername: string;
+  twitterHandle?: string;
+  discordUsername?: string;
   contentLink: string;
-  contentType: "short-form" | "thread" | "video" | "infographics" | "artwork" | "stream-clip";
-  title?: string;
-  description?: string;
-  submittedBy: string;
-  status: "pending" | "approved" | "rejected";
-  adminNotes?: string;
-  createdAt: string;
+  contentType?: string;
+  createdAt?: string;
+  impressions?: number;
 }
 
 interface SubmissionsTabProps {
-  contentSubmissions: ContentSubmission[];
-  updateSubmissionStatus: (id: string, status: "pending" | "approved" | "rejected", adminNotes?: string) => void;
-  deleteSubmission: (id: string) => void;
+  contentSubmissions?: ContentSubmission[];
   submissionSearch: string;
   setSubmissionSearch: (search: string) => void;
 }
 
 export default function SubmissionsTab({
-  contentSubmissions,
-  updateSubmissionStatus,
-  deleteSubmission,
+  contentSubmissions = [],
   submissionSearch,
   setSubmissionSearch,
 }: SubmissionsTabProps) {
-  const filteredSubmissions = contentSubmissions.filter(submission => 
-    submission.title?.toLowerCase().includes(submissionSearch.toLowerCase()) ||
-    submission.twitterHandle.toLowerCase().includes(submissionSearch.toLowerCase()) ||
-    submission.discordUsername.toLowerCase().includes(submissionSearch.toLowerCase()) ||
-    submission.contentType.toLowerCase().includes(submissionSearch.toLowerCase())
-  );
+  const [yearFilter, setYearFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+
+  const years = Array.from(
+    new Set(
+      contentSubmissions
+        .map((s) => (s.createdAt ? new Date(s.createdAt).getFullYear() : null))
+        .filter((y): y is number => y !== null)
+    )
+  ).sort((a, b) => b - a);
+
+  const MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const filteredSubmissions = contentSubmissions.filter((sub) => {
+    const search = submissionSearch.toLowerCase();
+    const matchesSearch =
+      (sub.twitterHandle || "").toLowerCase().includes(search) ||
+      (sub.discordUsername || "").toLowerCase().includes(search) ||
+      sub.contentLink.toLowerCase().includes(search);
+
+    if (!matchesSearch) return false;
+
+    if (yearFilter !== "all" && sub.createdAt) {
+      const y = new Date(sub.createdAt).getFullYear().toString();
+      if (y !== yearFilter) return false;
+    }
+
+    if (monthFilter !== "all" && sub.createdAt) {
+      const m = new Date(sub.createdAt).getMonth();
+      if ((m + 1).toString() !== monthFilter) return false;
+    }
+
+    if (typeFilter !== "all" && sub.contentType) {
+      if (sub.contentType !== typeFilter) return false;
+    }
+
+    return true;
+  });
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700">
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-xl font-semibold text-pink-400">Content Submissions</h2>
+    <div className="bg-[#11161c] border border-gray-800 overflow-x-hidden">
+
+      {/* Search + Filters */}
+      <div className="p-3 sm:p-4 border-b border-gray-800 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-3">
         <input
           type="text"
-          placeholder="Search submissions..."
+          placeholder="Search submissions"
           value={submissionSearch}
           onChange={(e) => setSubmissionSearch(e.target.value)}
-          className="mt-4 w-full rounded-lg bg-gray-700 text-gray-100 px-3 py-2 border border-gray-600 focus:border-green-500 focus:outline-none"
+          className="
+            w-full sm:w-56 bg-[#0b0f14]
+            border border-gray-800
+            px-3 py-2
+            text-[11px] sm:text-sm
+            text-white
+            focus:outline-none
+          "
         />
+
+        <div className="flex flex-wrap gap-2 text-[10px] sm:text-xs">
+          {/* Year */}
+          <select
+            value={yearFilter}
+            onChange={(e) => setYearFilter(e.target.value)}
+            className="bg-[#0b0f14] border border-gray-800 px-2 py-1 text-white"
+          >
+            <option value="all">All years</option>
+            {years.map((y) => (
+              <option key={y} value={y.toString()}>
+                {y}
+              </option>
+            ))}
+          </select>
+
+          {/* Month */}
+          <select
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+            className="bg-[#0b0f14] border border-gray-800 px-2 py-1 text-white"
+          >
+            <option value="all">All months</option>
+            {MONTHS.map((m, idx) => (
+              <option key={m} value={(idx + 1).toString()}>
+                {m}
+              </option>
+            ))}
+          </select>
+
+          {/* Type / Category */}
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="bg-[#0b0f14] border border-gray-800 px-2 py-1 text-white"
+          >
+            <option value="all">All types</option>
+            <option value="short-form">Short form</option>
+            <option value="thread">Thread</option>
+            <option value="video">Video</option>
+            <option value="infographics">Infographics</option>
+            <option value="artwork">Artwork</option>
+            <option value="stream-clip">Stream clip</option>
+          </select>
+        </div>
       </div>
-      <div className="max-h-96 overflow-y-auto">
-        {filteredSubmissions.map((submission) => (
-          <div key={submission._id} className="p-4 border-b border-gray-700 last:border-b-0">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-semibold text-lg text-blue-400">
-                    {submission.title || "Untitled Submission"}
-                  </h3>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    submission.status === "approved" ? "bg-green-100 text-green-800" :
-                    submission.status === "rejected" ? "bg-red-100 text-red-800" :
-                    "bg-yellow-100 text-yellow-800"
-                  }`}>
-                    {submission.status.toUpperCase()}
-                  </span>
-                </div>
-                <div className="text-sm text-gray-400 mb-2">
-                  <span>🐦 @{submission.twitterHandle}</span>
-                  <span className="ml-4">💬 {submission.discordUsername}</span>
-                  <span className="ml-4">📝 {submission.contentType.replace("-", " ").toUpperCase()}</span>
-                </div>
-                {submission.description && (
-                  <p className="text-gray-300 mb-2">{submission.description}</p>
-                )}
+
+      {/* Header */}
+      <div
+        className="
+          grid grid-cols-6
+          px-2 sm:px-4 py-2
+          text-[11px] sm:text-sm
+          font-bold text-white
+          border-b border-gray-800
+        "
+      >
+        <div className="truncate">Twitter</div>
+        <div className="truncate">Discord</div>
+        <div className="truncate">Link</div>
+        <div className="truncate">Category</div>
+        <div className="truncate">Submitted</div>
+        <div className="text-right truncate">Impressions</div>
+      </div>
+
+      {/* Rows */}
+      <div className="divide-y divide-gray-800">
+        {filteredSubmissions.length === 0 ? (
+          <div className="p-4 text-[11px] sm:text-sm text-gray-400">
+            No submissions found
+          </div>
+        ) : (
+          filteredSubmissions.map((sub) => (
+            <div
+              key={sub._id}
+              className="
+                grid grid-cols-6
+                px-2 sm:px-4 py-2
+                text-[11px] sm:text-sm
+                items-center
+              "
+            >
+              {/* Twitter */}
+              <div className="text-white truncate min-w-0 text-left">
+                {sub.twitterHandle || "—"}
+              </div>
+
+              {/* Discord */}
+              <div className="text-white truncate min-w-0 text-left">
+                {sub.discordUsername || "—"}
+              </div>
+
+              {/* Link */}
+              <div className="min-w-0 text-left">
                 <a
-                  href={submission.contentLink}
+                  href={sub.contentLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-green-400 hover:text-green-300 text-sm"
+                  className="text-[#10B981] truncate inline-block"
                 >
-                  {submission.contentLink}
+                  Open
                 </a>
-                {submission.adminNotes && (
-                  <div className="mt-2 p-2 bg-gray-700 rounded text-sm">
-                    <strong>Admin Notes:</strong> {submission.adminNotes}
-                  </div>
-                )}
-                <div className="text-sm text-gray-400 mt-2">
-                  <span>By {submission.submittedBy}</span>
-                  <span className="ml-4">📅 {new Date(submission.createdAt).toLocaleDateString()}</span>
-                </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => updateSubmissionStatus(submission._id, "approved")}
-                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md font-semibold text-sm"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => updateSubmissionStatus(submission._id, "rejected")}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md font-semibold text-sm"
-                  >
-                    Reject
-                  </button>
-                </div>
-                <button
-                  onClick={() => deleteSubmission(submission._id)}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md font-semibold text-sm"
-                >
-                  Delete
-                </button>
+
+              {/* Category / Type */}
+              <div className="text-white truncate min-w-0 text-left">
+                {sub.contentType || "—"}
+              </div>
+
+              {/* Submitted date */}
+              <div className="text-white truncate min-w-0 text-left">
+                {sub.createdAt
+                  ? new Date(sub.createdAt).toLocaleDateString("en-US")
+                  : "—"}
+              </div>
+
+              {/* Impressions */}
+              <div className="text-right text-[#3aa0d8] truncate">
+                {typeof sub.impressions === "number" ? sub.impressions : "—"}
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

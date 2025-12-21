@@ -35,8 +35,15 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  // Handle API requests with cache-first strategy
-  if (event.request.url.includes('/api/')) {
+  const url = new URL(event.request.url);
+
+  // Never cache or intercept auth/session requests – they must always be fresh
+  if (url.pathname.startsWith('/api/auth')) {
+    return; // Let the network handle it directly
+  }
+
+  // Handle other API requests with cache-first strategy
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       caches.match(event.request)
         .then((response) => {
@@ -46,7 +53,7 @@ self.addEventListener('fetch', (event) => {
           return fetch(event.request).then((response) => {
             // Don't cache if not ok
             if (!response.ok) return response;
-            
+
             // Clone the response
             const responseClone = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
