@@ -3,22 +3,51 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import Sidebar from "@/components/Sidebar";
-import {
-  AdminTabs,
-  PostsTab,
-  UsersTab,
-  AssetsTab,
-  RecordingsTab,
-  AnnouncementsTab,
-  SubmissionsTab,
-  UserDetailsModal,
-} from "@/components/admin";
+
+// Lazy-load heavy admin pieces to reduce initial JS
+const AdminTabs = dynamic(
+  () => import("@/components/admin").then((m) => m.AdminTabs),
+  { ssr: false }
+);
+const PostsTab = dynamic(
+  () => import("@/components/admin").then((m) => m.PostsTab),
+  { ssr: false }
+);
+const UsersTab = dynamic(
+  () => import("@/components/admin").then((m) => m.UsersTab),
+  { ssr: false }
+);
+const AssetsTab = dynamic(
+  () => import("@/components/admin").then((m) => m.AssetsTab),
+  { ssr: false }
+);
+const RecordingsTab = dynamic(
+  () => import("@/components/admin").then((m) => m.RecordingsTab),
+  { ssr: false }
+);
+const AnnouncementsTab = dynamic(
+  () => import("@/components/admin").then((m) => m.AnnouncementsTab),
+  { ssr: false }
+);
+const SubmissionsTab = dynamic(
+  () => import("@/components/admin").then((m) => m.SubmissionsTab),
+  { ssr: false }
+);
+const UserDetailsModal = dynamic(
+  () => import("@/components/admin").then((m) => m.UserDetailsModal),
+  { ssr: false }
+);
+
 import { useAdminData } from "@/hooks/useAdminData";
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  // Derive isAdmin with a safe type assertion to avoid TS property errors
+  const isAdmin = Boolean((session?.user as any)?.isAdmin);
 
   const {
     // Data
@@ -36,8 +65,6 @@ export default function AdminPage() {
     setNewAsset,
     assetFiles,
     setAssetFiles,
-    assetFile,
-    setAssetFile,
     newRecording,
     setNewRecording,
     newAnnouncement,
@@ -79,7 +106,7 @@ export default function AdminPage() {
     deleteRecording,
     addAnnouncement,
     deleteAnnouncement,
-    updateSubmissionStatus,
+    updateSubmissionStatus, // Ensure this is included
     deleteSubmission,
     viewUserDetails,
     closeUserDetails,
@@ -94,17 +121,18 @@ export default function AdminPage() {
       return;
     }
 
-    if (status === "authenticated" && session?.user && !session.user.isAdmin) {
+    if (status === "authenticated" && !isAdmin) {
       router.replace("/");
     }
-  }, [status, session, router]);
+  }, [status, isAdmin, router]);
 
   // Loading state
   if (status === "loading") return <div>Loading...</div>;
 
   // Not authenticated or not admin
-  if (status === "unauthenticated") return <div>Access Denied</div>;
-  if (!session?.user?.isAdmin) return <div>Access Denied</div>;
+  if (status === "unauthenticated" || !isAdmin) {
+    return <div>Access Denied</div>;
+  }
 
   return (
     <>
@@ -185,7 +213,7 @@ export default function AdminPage() {
           {activeTab === "submissions" && (
             <SubmissionsTab
               contentSubmissions={contentSubmissions}
-              updateSubmissionStatus={updateSubmissionStatus}
+              updateSubmissionStatus={updateSubmissionStatus} // Ensure this is passed
               deleteSubmission={deleteSubmission}
               submissionSearch={submissionSearch}
               setSubmissionSearch={setSubmissionSearch}

@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 interface User {
   _id: string;
   name: string;
@@ -18,22 +20,30 @@ interface User {
   };
 }
 
+interface ContentSubmission {
+  // Define the properties of ContentSubmission based on your application's requirements
+}
+
 interface UserDetailsModalProps {
   selectedUser: User | null;
   showUserDetails: boolean;
   closeUserDetails: () => void;
-  removeWhitelist: (email: string) => void;
-  whitelistUser: (email: string) => void;
+  removeWhitelist: (email: string) => Promise<void>;
+  whitelistUser: (email: string) => Promise<void>;
+  contentSubmissions: ContentSubmission[];
 }
 
-export default function UserDetailsModal({
+const UserDetailsModalComponent: React.FC<UserDetailsModalProps> = ({
   selectedUser,
   showUserDetails,
   closeUserDetails,
   removeWhitelist,
   whitelistUser,
-}: UserDetailsModalProps) {
-  if (!showUserDetails || !selectedUser) return null;
+  contentSubmissions,
+}) => {
+  if (!showUserDetails || !selectedUser) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
@@ -59,7 +69,6 @@ export default function UserDetailsModal({
         </div>
 
         <div className="p-4 sm:p-6 space-y-6">
-
           {/* User Header */}
           <div className="flex items-center gap-4 bg-[#0b0f14] border border-gray-800 p-4">
             {selectedUser.image && (
@@ -176,12 +185,14 @@ export default function UserDetailsModal({
               Close
             </button>
           </div>
-
         </div>
       </div>
     </div>
   );
-}
+};
+
+const UserDetailsModal = React.memo(UserDetailsModalComponent);
+export default UserDetailsModal;
 
 /* ---------- Helpers ---------- */
 

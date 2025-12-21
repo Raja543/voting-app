@@ -22,12 +22,15 @@ interface NewAsset {
 }
 
 interface AssetsTabProps {
-  assets?: Asset[];
+  assets?: Asset[]; // optional list of existing assets
   newAsset: NewAsset;
   setNewAsset: (asset: NewAsset) => void;
   addAsset: (e: React.FormEvent<HTMLFormElement>) => void;
   assetFiles: File[];
   setAssetFiles: (files: File[]) => void;
+  deleteAsset?: (id: string) => void | Promise<void>; // optional delete handler
+  assetSearch?: string; // optional search string
+  setAssetSearch?: (value: string) => void; // optional search setter
 }
 
 export default function AssetsTab({
@@ -38,6 +41,22 @@ export default function AssetsTab({
   setAssetFiles,
 }: AssetsTabProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [previewUrls, setPreviewUrls] = React.useState<string[]>([]);
+
+  // Create/revoke blob URLs only when assetFiles changes
+  React.useEffect(() => {
+    if (!assetFiles || assetFiles.length === 0) {
+      setPreviewUrls([]);
+      return;
+    }
+
+    const urls = assetFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [assetFiles]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -85,13 +104,13 @@ export default function AssetsTab({
             {assetFiles && assetFiles.length > 0
               ? assetFiles.slice(0, 10).map((file, i) => {
                   const isImage = file.type.startsWith("image/");
-                  const url = URL.createObjectURL(file);
+                  const url = previewUrls[i];
                   return (
                     <div
                       key={i}
                       className="h-14 bg-[#11161c] border border-gray-800 flex items-center justify-center overflow-hidden"
                     >
-                      {isImage ? (
+                      {isImage && url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={url}

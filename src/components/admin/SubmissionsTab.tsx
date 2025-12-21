@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 interface ContentSubmission {
   _id: string;
@@ -13,13 +13,21 @@ interface ContentSubmission {
 }
 
 interface SubmissionsTabProps {
-  contentSubmissions?: ContentSubmission[];
+  contentSubmissions: ContentSubmission[];
+  updateSubmissionStatus: (
+    id: string,
+    status: "pending" | "approved" | "rejected",
+    adminNotes?: string
+  ) => Promise<void>;
+  deleteSubmission: (id: string) => Promise<void>;
   submissionSearch: string;
-  setSubmissionSearch: (search: string) => void;
+  setSubmissionSearch: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export default function SubmissionsTab({
-  contentSubmissions = [],
+  contentSubmissions,
+  updateSubmissionStatus,
+  deleteSubmission,
   submissionSearch,
   setSubmissionSearch,
 }: SubmissionsTabProps) {
@@ -50,35 +58,38 @@ export default function SubmissionsTab({
     "December",
   ];
 
-  const filteredSubmissions = contentSubmissions.filter((sub) => {
-    const search = submissionSearch.toLowerCase();
-    const matchesSearch =
-      (sub.twitterHandle || "").toLowerCase().includes(search) ||
-      (sub.discordUsername || "").toLowerCase().includes(search) ||
-      sub.contentLink.toLowerCase().includes(search);
+  const filteredSubmissions = useMemo(
+    () =>
+      contentSubmissions.filter((sub) => {
+        const search = submissionSearch.toLowerCase();
+        const matchesSearch =
+          (sub.twitterHandle || "").toLowerCase().includes(search) ||
+          (sub.discordUsername || "").toLowerCase().includes(search) ||
+          sub.contentLink.toLowerCase().includes(search);
 
-    if (!matchesSearch) return false;
+        if (!matchesSearch) return false;
 
-    if (yearFilter !== "all" && sub.createdAt) {
-      const y = new Date(sub.createdAt).getFullYear().toString();
-      if (y !== yearFilter) return false;
-    }
+        if (yearFilter !== "all" && sub.createdAt) {
+          const y = new Date(sub.createdAt).getFullYear().toString();
+          if (y !== yearFilter) return false;
+        }
 
-    if (monthFilter !== "all" && sub.createdAt) {
-      const m = new Date(sub.createdAt).getMonth();
-      if ((m + 1).toString() !== monthFilter) return false;
-    }
+        if (monthFilter !== "all" && sub.createdAt) {
+          const m = new Date(sub.createdAt).getMonth();
+          if ((m + 1).toString() !== monthFilter) return false;
+        }
 
-    if (typeFilter !== "all" && sub.contentType) {
-      if (sub.contentType !== typeFilter) return false;
-    }
+        if (typeFilter !== "all" && sub.contentType) {
+          if (sub.contentType !== typeFilter) return false;
+        }
 
-    return true;
-  });
+        return true;
+      }),
+    [contentSubmissions, submissionSearch, yearFilter, monthFilter, typeFilter]
+  );
 
   return (
     <div className="bg-[#11161c] border border-gray-800 overflow-x-hidden">
-
       {/* Search + Filters */}
       <div className="p-3 sm:p-4 border-b border-gray-800 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-3">
         <input
