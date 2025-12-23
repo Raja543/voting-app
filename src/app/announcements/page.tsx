@@ -18,6 +18,7 @@ export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [error, setError] = useState("");
   const [readIds, setReadIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   /* ---------------- LOAD READ STATE ---------------- */
   useEffect(() => {
@@ -33,10 +34,12 @@ export default function AnnouncementsPage() {
 
   /* ---------------- FETCH ANNOUNCEMENTS ---------------- */
   useEffect(() => {
+    setLoading(true);
     fetch("/api/announcements")
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => setAnnouncements(Array.isArray(data) ? data : []))
-      .catch(() => setError("Failed to load announcements"));
+      .catch(() => setError("Failed to load announcements"))
+      .finally(() => setLoading(false));
   }, []);
 
   /* ---------------- PRIORITY STYLES ---------------- */
@@ -96,11 +99,30 @@ export default function AnnouncementsPage() {
             </div>
           )}
 
-          {announcements.length === 0 ? (
+          {/* Loading state */}
+          {loading && !error && (
+            <div className="space-y-4" aria-hidden="true">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-[#11161c] border border-gray-800 p-4 sm:p-6"
+                >
+                  <div className="h-4 w-40 bg-gray-700 rounded mb-3" />
+                  <div className="h-3 w-full bg-gray-800 rounded mb-2" />
+                  <div className="h-3 w-5/6 bg-gray-800 rounded mb-2" />
+                  <div className="h-3 w-2/3 bg-gray-800 rounded" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loading && announcements.length === 0 && !error ? (
             <div className="text-white/70 text-center text-sm">
               No announcements yet.
             </div>
-          ) : (
+          ) : null}
+
+          {!loading && announcements.length > 0 && (
             <div className="space-y-4">
               {announcements.map((a) => {
                 const priority = priorityStyles[a.priority];

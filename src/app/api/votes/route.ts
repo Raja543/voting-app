@@ -145,11 +145,11 @@ export async function GET(req: Request) {
         userVotes = await Vote.find({
           userId: session.user.email,
           $or: [ { votingSessionId }, { votingPeriod } ],
-        });
+        }).lean();
       } else if (votingSessionId) {
-        userVotes = await Vote.find({ userId: session.user.email, votingSessionId });
+        userVotes = await Vote.find({ userId: session.user.email, votingSessionId }).lean();
       } else {
-        userVotes = await Vote.find({ userId: session.user.email, votingPeriod });
+        userVotes = await Vote.find({ userId: session.user.email, votingPeriod }).lean();
       }
       const userTotalVotes = userVotes.length;
       

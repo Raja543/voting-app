@@ -81,8 +81,6 @@ const userSchema = new Schema({
   timestamps: true
 });
 
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
 userSchema.index({ providerId: 1, provider: 1 });
 
 const User = models.User || mongoose.model<IUser>("User", userSchema);

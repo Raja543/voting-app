@@ -4,12 +4,26 @@ import { useState, useEffect } from "react";
 
 export default function VotingCountdown() {
   const [timeLeft, setTimeLeft] = useState("");
+  const [isVotingActive, setIsVotingActive] = useState<boolean | null>(null);
 
   useEffect(() => {
     const update = async () => {
       const res = await fetch("/api/voting-status");
       const data = await res.json();
-      if (!data?.isVotingActive || !data.votingEndTime) return;
+
+      if (!data) {
+        setIsVotingActive(null);
+        setTimeLeft("");
+        return;
+      }
+
+      if (!data.isVotingActive || !data.votingEndTime) {
+        setIsVotingActive(false);
+        setTimeLeft("");
+        return;
+      }
+
+      setIsVotingActive(true);
 
       const diff = new Date(data.votingEndTime).getTime() - Date.now();
       const d = Math.floor(diff / 86400000);
@@ -23,6 +37,19 @@ export default function VotingCountdown() {
     const i = setInterval(update, 60000);
     return () => clearInterval(i);
   }, []);
+
+  // While we are still loading the status, don't show anything.
+  if (isVotingActive === null) return null;
+
+  // Explicit closed state when voting is not live.
+  if (!isVotingActive) {
+    return (
+      <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-400">
+        <span className="h-2 w-2 rounded-full bg-gray-500" />
+        <span>Voting is not live right now</span>
+      </div>
+    );
+  }
 
   if (!timeLeft) return null;
 

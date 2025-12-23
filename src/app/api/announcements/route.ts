@@ -7,8 +7,18 @@ import Announcement from "@/models/announcement";
 export async function GET() {
   try {
     await dbConnect();
-    const announcements = await Announcement.find({ isActive: true }).sort({ createdAt: -1 });
-    return NextResponse.json(announcements);
+    const announcements = await Announcement.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const res = NextResponse.json(announcements);
+    // Short server-side cache to improve TTFB without making content stale
+    res.headers.set(
+      "Cache-Control",
+      "public, s-maxage=30, stale-while-revalidate=60"
+    );
+
+    return res;
   } catch (error) {
     console.error("Error fetching announcements:", error);
     return NextResponse.json({ error: "Failed to fetch announcements" }, { status: 500 });

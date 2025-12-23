@@ -27,7 +27,9 @@ export async function GET(req: Request) {
       }
     }
     
-    const posts = await Post.find(query).sort({ createdAt: -1 });
+    const posts = await Post.find(query)
+      .sort({ createdAt: -1 })
+      .lean();
     
     // Add caching headers for better performance
     const response = NextResponse.json(posts);

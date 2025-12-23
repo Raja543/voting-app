@@ -174,19 +174,46 @@ const Postlist = memo(function Postlist() {
         <div className="mx-auto max-w-[1600px]">
           {/* Header */}
           <div className="mb-6 text-center space-y-3">
-            <div className="flex flex-wrap items-center justify-center gap-2 text-base sm:text-lg font-semibold">
-              <span>Vote for your favorite content from</span>
-              {previousPeriod && (
-                <span className="px-2 py-1 text-[#027DA4] bg-[#027DA4]/10 rounded">
-                  {previousPeriod}
-                </span>
-              )}
-            </div>
+            {isVotingActive && (
+              <div className="flex flex-wrap items-center justify-center gap-2 text-base sm:text-lg font-semibold">
+                <span>Vote for your favorite content from</span>
+                {previousPeriod && (
+                  <span className="px-2 py-1 text-[#027DA4] bg-[#027DA4]/10 rounded">
+                    {previousPeriod}
+                  </span>
+                )}
+              </div>
+            )}
             <VotingCountdown />
           </div>
 
-          {/* Grid */}
-          {!isVotingActive || loading ? null : (
+          {/* Skeleton while loading and voting is live */}
+          {loading && isVotingActive && (
+            <div
+              className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+              aria-hidden="true"
+            >
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="bg-[#161B22] border border-[#1f2933] p-4 flex flex-col min-h-[170px]"
+                >
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-700 rounded w-3/4" />
+                    <div className="h-3 bg-gray-800 rounded w-full" />
+                    <div className="h-3 bg-gray-800 rounded w-5/6" />
+                  </div>
+                  <div className="mt-4 flex items-center justify-between gap-2">
+                    <div className="h-7 w-16 bg-gray-800 rounded" />
+                    <div className="h-7 w-20 bg-gray-800 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Grid when voting is live */}
+          {!loading && isVotingActive && (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {memoizedPosts.map((post) => (
                 <PostCard
@@ -200,7 +227,35 @@ const Postlist = memo(function Postlist() {
             </div>
           )}
 
-          {/* Footer Hint */}
+          {/* Message when voting is not live */}
+          {!loading && !isVotingActive && (
+            <div className="mt-10 max-w-xl mx-auto text-center border border-[#1f2933] bg-[#11161c] px-6 py-6">
+              <h2 className="text-lg font-semibold text-white mb-2">
+                Voting is not live right now
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-400 mb-4">
+                Check back when the next voting round opens. In the meantime
+                you can review past results or submit content for the upcoming
+                voting period.
+              </p>
+              <div className="flex flex-wrap gap-3 justify-center text-xs sm:text-sm">
+                <a
+                  href="/results"
+                  className="px-4 py-2 bg-[#027DA4] hover:bg-[#026b8f] text-white"
+                >
+                  View previous results
+                </a>
+                <a
+                  href="/submit-content"
+                  className="px-4 py-2 border border-[#027DA4] text-[#027DA4] hover:bg-[#027DA4]/10"
+                >
+                  Submit content
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Footer Hint when voting is live */}
           {session?.user?.email && !session.user.isAdmin && isVotingActive && (
             <div className="mt-8 text-center text-xs text-gray-500">
               You can vote for up to{" "}

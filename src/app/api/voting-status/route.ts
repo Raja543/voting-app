@@ -24,12 +24,19 @@ export async function GET() {
     const currentPeriodComputed = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
     if (!votingStatus) {
-      return NextResponse.json({
+      const res = NextResponse.json({
         isVotingActive: false,
         currentPeriod: null,
         votingEndTime: null,
         timeRemaining: null,
       });
+
+      res.headers.set(
+        "Cache-Control",
+        "public, s-maxage=5, stale-while-revalidate=30"
+      );
+
+      return res;
     }
 
     const timeRemaining = votingStatus.votingEndTime
@@ -39,13 +46,20 @@ export async function GET() {
     // Prefer the stored currentPeriod on the votingStatus document; fallback to a computed current month.
     const currentPeriod = votingStatus.currentPeriod || currentPeriodComputed;
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       isVotingActive: votingStatus.isVotingActive,
       currentPeriod: votingStatus.isVotingActive ? currentPeriod : null,
       votingStartTime: votingStatus.votingStartTime,
       votingEndTime: votingStatus.votingEndTime,
       timeRemaining,
     });
+
+    res.headers.set(
+      "Cache-Control",
+      "public, s-maxage=5, stale-while-revalidate=30"
+    );
+
+    return res;
   } catch (error) {
     console.error("Get voting status error:", error);
     return NextResponse.json(

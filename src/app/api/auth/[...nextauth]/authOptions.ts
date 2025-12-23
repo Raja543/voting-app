@@ -59,10 +59,23 @@ const authOptions: NextAuthOptions = {
           return true;
         }
 
-        const email =
+        let email =
           user.email ||
           (profile as any)?.data?.email ||
           (profile as any)?.email;
+
+        // Twitter OAuth 2.0 often does not return an email; generate a
+        // stable synthetic email based on the username so we can keep
+        // using email as the unique key in our User model.
+        if (!email && account.provider === "twitter") {
+          const twitterUsername =
+            (profile as any)?.data?.username ||
+            (profile as any)?.username ||
+            user.name ||
+            `twitter_${account.providerAccountId}`;
+
+          email = `${twitterUsername}@twitter.local`;
+        }
 
         if (!email) {
           console.log("[NextAuth] Deny sign-in: missing email", { user, account, profile });
@@ -112,10 +125,28 @@ const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user }) {
-      if (user) {
+    async jwt({ token, user, account }) {
+      // On the initial sign-in, we have access to `user` and `account`.
+      // Use them to look up our Mongo user and hydrate the JWT. On
+      // subsequent calls only `token` is present and already hydrated.
+      if (user && account) {
         await dbConnect();
-        const dbUser = await User.findOne({ email: user.email });
+
+        let dbUser = null;
+
+        if (user.email) {
+          dbUser = await User.findOne({ email: user.email.toLowerCase() });
+        }
+
+        // For Twitter, email is often missing; fall back to provider +
+        // providerId to find the user we created in the signIn callback.
+        if (!dbUser && account.provider && user.id) {
+          dbUser = await User.findOne({
+            provider: account.provider,
+            providerId: user.id,
+          });
+        }
+
         if (dbUser) {
           token.id = dbUser._id.toString();
           token.name = dbUser.name;
@@ -127,6 +158,7 @@ const authOptions: NextAuthOptions = {
           token.provider = dbUser.provider;
         }
       }
+
       return token;
     },
     async session({ session, token }) {
