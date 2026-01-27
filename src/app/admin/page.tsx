@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import Sidebar from "@/components/Sidebar";
+import { type ContentSubmission } from "@/components/admin/UserDetailsModal";
 
-// Lazy-load heavy admin pieces to reduce initial JS
 const AdminTabs = dynamic(
   () => import("@/components/admin").then((m) => m.AdminTabs),
   { ssr: false }
@@ -45,20 +45,15 @@ import { useAdminData } from "@/hooks/useAdminData";
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
-  // Derive isAdmin with a safe type assertion to avoid TS property errors
   const isAdmin = Boolean((session?.user as any)?.isAdmin);
 
   const {
-    // Data
     users,
     posts,
     assets,
     recordings,
     announcements,
     contentSubmissions,
-    
-    // Form states
     newPost,
     setNewPost,
     newAsset,
@@ -69,7 +64,7 @@ export default function AdminPage() {
     setNewRecording,
     newAnnouncement,
     setNewAnnouncement,
-    
+
     // Search states
     postSearch,
     setPostSearch,
@@ -83,7 +78,7 @@ export default function AdminPage() {
     setAnnouncementSearch,
     submissionSearch,
     setSubmissionSearch,
-    
+
     // Other states
     isVotingActive,
     currentPeriod,
@@ -92,7 +87,7 @@ export default function AdminPage() {
     setActiveTab,
     selectedUser,
     showUserDetails,
-    
+
     // Functions
     whitelistUser,
     removeWhitelist,
@@ -106,13 +101,12 @@ export default function AdminPage() {
     deleteRecording,
     addAnnouncement,
     deleteAnnouncement,
-    updateSubmissionStatus, // Ensure this is included
+    updateSubmissionStatus,
     deleteSubmission,
     viewUserDetails,
     closeUserDetails,
   } = useAdminData();
 
-  // Redirect logic
   useEffect(() => {
     if (status === "loading") return;
 
@@ -126,10 +120,8 @@ export default function AdminPage() {
     }
   }, [status, isAdmin, router]);
 
-  // Loading state
   if (status === "loading") return <div>Loading...</div>;
 
-  // Not authenticated or not admin
   if (status === "unauthenticated" || !isAdmin) {
     return <div>Access Denied</div>;
   }
@@ -137,7 +129,7 @@ export default function AdminPage() {
   return (
     <>
       <Sidebar />
-      
+
       <div className="min-h-screen bg-[#0D1117] text-gray-100 px-4 py-6 sm:px-8 sm:py-8">
         <div className="container px-0 sm:px-4 py-8">
           {/* Tab Navigation */}

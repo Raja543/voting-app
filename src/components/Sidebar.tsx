@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import Image from "next/image";
 import { signOut, useSession } from "next-auth/react";
@@ -22,7 +21,6 @@ export default function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<"submission" | "voting" | null>(null);
 
-  /* Auto open dropdown (open ≠ active) */
   useEffect(() => {
     if (pathname === "/submitted-posts" || pathname === "/submit-content") {
       setOpenMenu("submission");
@@ -33,7 +31,6 @@ export default function Sidebar() {
     }
   }, [pathname]);
 
-  /* Swipe close */
   useEffect(() => {
     let startX = 0;
 
@@ -63,7 +60,6 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile toggle */}
       <button
         onClick={() => setSidebarOpen(true)}
         className="md:hidden fixed top-4 left-4 z-50 bg-gray-900 text-white rounded px-2 py-1"
@@ -105,7 +101,6 @@ export default function Sidebar() {
           </Section>
 
           <Section title="Content">
-            {/* SUBMISSION */}
             <ParentLink
               href="/submit-content"
               label="Submission"
@@ -121,7 +116,6 @@ export default function Sidebar() {
               <SubNavLink href="/submitted-posts" label="Submitted posts" />
             </DropdownContent>
 
-            {/* VOTING */}
             <ParentLink
               href="/"
               label="Voting"
@@ -158,16 +152,13 @@ export default function Sidebar() {
                 Login
               </Link>
             )}
-
-            {/* ✅ ADMIN RESTORED */}
             {isAdmin && (
               <Link
                 href="/admin"
-                className={`block px-3 py-2 rounded font-medium transition ${
-                  pathname === "/admin"
+                className={`block px-3 py-2 rounded font-medium transition ${pathname === "/admin"
                     ? "bg-[#10B981] text-white"
                     : "text-[#10B981] hover:bg-gray-800"
-                }`}
+                  }`}
               >
                 Admin
               </Link>
@@ -178,8 +169,6 @@ export default function Sidebar() {
     </>
   );
 }
-
-/* ---------- HELPERS ---------- */
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -205,11 +194,10 @@ function NavLink({
   return (
     <Link
       href={href}
-      className={`flex items-center gap-3 px-3 py-2 rounded transition ${
-        active
+      className={`flex items-center gap-3 px-3 py-2 rounded transition ${active
           ? "bg-white text-black"
           : "text-white hover:bg-gray-800"
-      }`}
+        }`}
     >
       {icon && (
         <Image
@@ -246,13 +234,11 @@ function ParentLink({
 
   return (
     <div className="flex items-center justify-between rounded hover:bg-gray-800 transition-colors">
-      {/* Parent link: navigates and also toggles dropdown */}
       <Link
         href={href}
         onClick={onToggle}
-        className={`flex items-center gap-3 px-3 py-2 flex-1 rounded transition-colors ${
-          parentActive ? "bg-white text-black" : "text-white"
-        }`}
+        className={`flex items-center gap-3 px-3 py-2 flex-1 rounded transition-colors ${parentActive ? "bg-white text-black" : "text-white"
+          }`}
       >
         <Image
           src={parentActive ? `/${icon}dark.png` : `/${icon}.png`}
@@ -262,8 +248,6 @@ function ParentLink({
         />
         {label}
       </Link>
-
-      {/* Chevron button: only toggles dropdown, no navigation */}
       <button
         type="button"
         onClick={onToggle}
@@ -291,9 +275,8 @@ function DropdownContent({
 }) {
   return (
     <div
-      className={`ml-6 overflow-hidden transition-all duration-300 ${
-        open ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-      }`}
+      className={`ml-6 overflow-hidden transition-all duration-300 ${open ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+        }`}
     >
       <div className="pt-1 space-y-1">{children}</div>
     </div>
@@ -313,11 +296,10 @@ function SubNavLink({
   return (
     <Link
       href={href}
-      className={`block px-3 py-1 rounded text-sm transition ${
-        active
+      className={`block px-3 py-1 rounded text-sm transition ${active
           ? "bg-white text-black"
           : "text-white/70 hover:text-white hover:bg-gray-800"
-      }`}
+        }`}
     >
       {label}
     </Link>

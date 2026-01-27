@@ -11,9 +11,6 @@ import { authOptions } from "../auth/[...nextauth]/authOptions";
 export async function GET() {
   try {
     await dbConnect();
-
-    // Use the period saved in votingStatus when available. The period should
-    // correspond to the month for which voting is active (current month by default).
     const votingStatus = await VotingStatus.findOne({ isVotingActive: true });
 
     const now = new Date();
@@ -42,8 +39,6 @@ export async function GET() {
     const timeRemaining = votingStatus.votingEndTime
       ? Math.max(0, votingStatus.votingEndTime.getTime() - now.getTime())
       : null;
-
-    // Prefer the stored currentPeriod on the votingStatus document; fallback to a computed current month.
     const currentPeriod = votingStatus.currentPeriod || currentPeriodComputed;
 
     const res = NextResponse.json({
@@ -82,17 +77,12 @@ export async function POST(req: Request) {
       );
     }
 
-  const body = await req.json();
-  const action = body?.action;
-  // Optional: admins can provide an explicit period (e.g. "October 2025") or
-  // a flag `usePreviousMonth` to indicate the period should be the previous month
-  // (useful if voting for a month starts after that month ends).
-  const explicitPeriod: string | undefined = body?.period;
-  const usePreviousMonth: boolean | undefined = body?.usePreviousMonth;
+    const body = await req.json();
+    const action = body?.action;
+    const explicitPeriod: string | undefined = body?.period;
+    const usePreviousMonth: boolean | undefined = body?.usePreviousMonth;
 
     if (action === "start") {
-      // Determine which period to start voting for.
-      // Priority: explicitPeriod (if provided) -> previous month (if usePreviousMonth true OR undefined) -> current month
       const now = new Date();
       const monthNames = [
         "January", "February", "March", "April", "May", "June",
@@ -103,9 +93,7 @@ export async function POST(req: Request) {
       if (explicitPeriod) {
         currentPeriod = explicitPeriod;
       } else {
-  // By default, start voting for the current month unless the admin
-  // explicitly requests the previous month via `usePreviousMonth: true`.
-  const preferPrev = usePreviousMonth === undefined ? false : Boolean(usePreviousMonth);
+        const preferPrev = usePreviousMonth === undefined ? false : Boolean(usePreviousMonth);
         if (preferPrev) {
           let prevMonth = now.getMonth() - 1;
           let year = now.getFullYear();
@@ -128,10 +116,10 @@ export async function POST(req: Request) {
         );
       }
 
-      // Create new voting status with end time (2 days from now)
+      // Create new voting status with end time (lasts 48h hours)
       const votingEndTime = new Date(
         now.getTime() + 2 * 24 * 60 * 60 * 1000
-      ); // 2 days
+      );
 
       const votingStatus = await VotingStatus.create({
         isVotingActive: true,
@@ -146,7 +134,6 @@ export async function POST(req: Request) {
         votingStatus,
       });
     } else if (action === "stop") {
-      // Find active voting status
       const activeStatus = await VotingStatus.findOne({ isVotingActive: true });
       if (!activeStatus) {
         return NextResponse.json(
@@ -156,7 +143,6 @@ export async function POST(req: Request) {
       }
 
       const now = new Date();
-      // Use the stored active period if available; otherwise compute current month.
       const monthNames = [
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
@@ -180,8 +166,6 @@ export async function POST(req: Request) {
       // Get vote counts for each post
       const postsWithVotes = await Promise.all(
         posts.map(async (post) => {
-          // Prefer session-based votes (if admin started voting which creates a votingStatus).
-          // Use activeStatus._id as the votingSessionId. Fallback to legacy votingPeriod if needed.
           const votingSessionId = activeStatus._id.toString();
           let voteCount = await Vote.countDocuments({ postId: post._id.toString(), votingSessionId });
           if (!voteCount) {

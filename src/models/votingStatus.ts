@@ -3,7 +3,7 @@ import mongoose, { Schema, models } from "mongoose";
 export interface IVotingStatus {
   _id: string;
   isVotingActive: boolean;
-  currentPeriod: string; // e.g., "August 2025"
+  currentPeriod: string; 
   votingStartTime?: Date;
   votingEndTime?: Date;
   createdAt: Date;

@@ -8,7 +8,8 @@ interface User {
   email: string;
   username?: string;
   bio?: string;
-  walletAddress?: string;
+  abstractWallet?: string;
+  evmWallet?: string;
   image?: string;
   provider: string;
   isAdmin: boolean;
@@ -21,7 +22,19 @@ interface User {
 }
 
 interface ContentSubmission {
-  // Define the properties of ContentSubmission based on your application's requirements
+  _id: string;
+  twitterHandle: string;
+  discordUsername: string;
+  contentLink: string;
+  contentType: "short-form" | "thread" | "video" | "infographics" | "artwork" | "stream-clip";
+  title?: string;
+  description?: string;
+  submittedBy: string;
+  status: "pending" | "approved" | "rejected";
+  adminNotes?: string;
+  impressions?: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface UserDetailsModalProps {
@@ -30,7 +43,7 @@ interface UserDetailsModalProps {
   closeUserDetails: () => void;
   removeWhitelist: (email: string) => Promise<void>;
   whitelistUser: (email: string) => Promise<void>;
-  contentSubmissions: ContentSubmission[];
+  contentSubmissions?: ContentSubmission[];
 }
 
 const UserDetailsModalComponent: React.FC<UserDetailsModalProps> = ({
@@ -101,11 +114,10 @@ const UserDetailsModalComponent: React.FC<UserDetailsModalProps> = ({
                 )}
 
                 <span
-                  className={`text-[10px] px-2 py-[2px] font-semibold ${
-                    selectedUser.isWhitelisted
+                  className={`text-[10px] px-2 py-[2px] font-semibold ${selectedUser.isWhitelisted
                       ? "bg-[#10B981] text-white"
                       : "bg-[#E40041] text-white"
-                  }`}
+                    }`}
                 >
                   {selectedUser.isWhitelisted ? "WHITELISTED" : "NOT WHITELISTED"}
                 </span>
@@ -133,9 +145,16 @@ const UserDetailsModalComponent: React.FC<UserDetailsModalProps> = ({
               </div>
 
               <div className="sm:col-span-2">
-                <span className="text-white text-xs font-semibold">Wallet</span>
+                <span className="text-white text-xs font-semibold">Abstract Wallet</span>
                 <p className="text-white text-xs font-mono break-all mt-1">
-                  {selectedUser.walletAddress || "—"}
+                  {selectedUser.abstractWallet || "—"}
+                </p>
+              </div>
+
+              <div className="sm:col-span-2">
+                <span className="text-white text-xs font-semibold">EVM Wallet</span>
+                <p className="text-white text-xs font-mono break-all mt-1">
+                  {selectedUser.evmWallet || "—"}
                 </p>
               </div>
 
@@ -169,11 +188,10 @@ const UserDetailsModalComponent: React.FC<UserDetailsModalProps> = ({
                   ? removeWhitelist(selectedUser.email)
                   : whitelistUser(selectedUser.email)
               }
-              className={`px-4 py-2 text-xs font-bold ${
-                selectedUser.isWhitelisted
+              className={`px-4 py-2 text-xs font-bold ${selectedUser.isWhitelisted
                   ? "bg-[#E40041] hover:bg-[#B0003A]"
                   : "bg-[#10B981] hover:bg-[#059669]"
-              } text-white`}
+                } text-white`}
             >
               {selectedUser.isWhitelisted ? "Remove Whitelist" : "Add Whitelist"}
             </button>
@@ -193,8 +211,7 @@ const UserDetailsModalComponent: React.FC<UserDetailsModalProps> = ({
 
 const UserDetailsModal = React.memo(UserDetailsModalComponent);
 export default UserDetailsModal;
-
-/* ---------- Helpers ---------- */
+export type { User, ContentSubmission };
 
 function InfoRow({ label, value }: { label: string; value?: string }) {
   return (

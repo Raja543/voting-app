@@ -27,7 +27,7 @@ export default function TownhallPage() {
     fetch("/api/townhall-recordings")
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => setRecordings(Array.isArray(data) ? data : []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   /* ---------------- FILTER ---------------- */
@@ -197,24 +197,12 @@ export default function TownhallPage() {
                     href={r.gdriveLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="
-                      mt-auto
-                      inline-block
-                      bg-[#027DA4]
-                      hover:bg-[#016381]
-                      px-3 py-1
-                      text-xs
-                      text-white
-                      w-fit
-                    "
-                  >
+                    className="mt-auto inline-block bg-[#027DA4] hover:bg-[#016381] px-3 py-1 text-xs text-white w-fit">
                     ▶ WATCH RECORDING
                   </a>
                 </div>
               </div>
             ))}
-
-            {/* Empty placeholders */}
             {filtered.length === 0 &&
               Array.from({ length: 3 }).map((_, i) => (
                 <div

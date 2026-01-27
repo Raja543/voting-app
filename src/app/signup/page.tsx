@@ -21,7 +21,6 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
       const res = await fetch("/api/users", {
         method: "POST",
@@ -118,7 +117,6 @@ export default function SignupPage() {
               </button>
             </div>
           </div>
-
           {error && (
             <p className="text-red-500 text-xs sm:text-sm">
               {error}

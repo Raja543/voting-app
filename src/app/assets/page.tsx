@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 
-/* ---------------- TYPES ---------------- */
-
 interface Asset {
   _id: string;
   title: string;
@@ -23,23 +21,17 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "misc", label: "Misc." },
 ];
 
-/* ---------------- PAGE ---------------- */
-
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [activeTab, setActiveTab] = useState<TabId>("branding");
   const [search, setSearch] = useState("");
 
-  /* ---------------- FETCH ASSETS ---------------- */
-
   useEffect(() => {
     fetch("/api/assets")
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => setAssets(Array.isArray(data) ? data : []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
-
-  /* ---------------- FILTER ASSETS ---------------- */
 
   const filteredAssets = useMemo(() => {
     return assets.filter((asset) => {
@@ -66,7 +58,6 @@ export default function AssetsPage() {
   return (
     <>
       <Sidebar />
-
       <main className="min-h-screen bg-[#0b0f14] overflow-x-hidden">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6">
 
@@ -77,24 +68,8 @@ export default function AssetsPage() {
 
           {/* Tabs + Search */}
           <div
-            className="
-              bg-[#11161c] border border-gray-800
-              p-3
-              flex flex-col gap-3
-              sm:flex-row sm:items-center sm:justify-between
-            "
-          >
-            {/* Tabs
-              - grid-cols-2 on very small phones
-              - flex-wrap on sm+
-              - NO horizontal scroll
-            */}
-            <div
-              className="
-                grid grid-cols-2 gap-2
-                sm:flex sm:flex-wrap
-              "
-            >
+            className=" bg-[#11161c] border border-gray-800 p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ">
+            <div className=" grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               {TABS.map((tab) => {
                 const active = activeTab === tab.id;
 
@@ -102,14 +77,10 @@ export default function AssetsPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`
-                      px-3 py-1
-                      text-xs sm:text-sm font-medium
-                      transition
-                      ${
-                        active
-                          ? "bg-white text-black"
-                          : "bg-[#0b0f14] text-white/70 hover:text-white"
+                    className={`px-3 py-1 text-xs sm:text-sm font-medium transition
+                      ${active
+                        ? "bg-white text-black"
+                        : "bg-[#0b0f14] text-white/70 hover:text-white"
                       }
                     `}
                   >
@@ -125,29 +96,12 @@ export default function AssetsPage() {
               placeholder="Search assets"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="
-                w-full sm:w-56
-                bg-[#0b0f14]
-                border border-gray-700
-                px-3 py-1
-                text-xs sm:text-sm text-white
-                placeholder-white/50
-                focus:outline-none
-              "
-            />
+              className=" w-full sm:w-5 bg-[#0b0f14] border border-gray-700 px-3 py-1 text-xs sm:text-sm text-white placeholder-white/50 focus:outline-none " />
           </div>
 
           {/* Assets Grid */}
           <div
-            className="
-              grid
-              grid-cols-2
-              sm:grid-cols-3
-              md:grid-cols-4
-              lg:grid-cols-5
-              gap-3 sm:gap-4
-            "
-          >
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 ">
             {/* Empty placeholders */}
             {filteredAssets.length === 0 &&
               Array.from({ length: 10 }).map((_, i) => (
@@ -164,18 +118,8 @@ export default function AssetsPage() {
                 href={asset.gdriveLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="
-                  aspect-square
-                  bg-[#11161c]
-                  border border-gray-800
-                  hover:border-gray-600
-                  transition
-                  overflow-hidden
-                  flex items-center justify-center
-                "
-              >
+                className="aspect-square bg-[#11161c] border border-gray-800 hover:border-gray-600 transition overflow-hidden flex items-center justify-center">
                 {asset.type === "image" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={asset.gdriveLink}
                     alt={asset.title}

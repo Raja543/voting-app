@@ -45,7 +45,6 @@ export default function SubmittedPostsPage() {
   return (
     <>
       <Sidebar />
-
       <main className="min-h-screen bg-[#0b0f14] overflow-x-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-8">
           {status === "loading" || (status === "authenticated" && loading) ? (
@@ -90,7 +89,7 @@ export default function SubmittedPostsPage() {
                         space-y-3
                       "
                     >
-                      {/* Main line: link + type */}
+                      {/* Link & Content Type */}
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="text-white text-sm break-words">
                           <a
@@ -110,7 +109,7 @@ export default function SubmittedPostsPage() {
                         </div>
                       </div>
 
-                      {/* Optional title / description */}
+                      {/* Title & Description */}
                       {(post.title || post.description) && (
                         <div className="space-y-1">
                           {post.title && (

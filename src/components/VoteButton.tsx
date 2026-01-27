@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState, memo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -54,8 +53,6 @@ const VoteButton = memo(function VoteButton({
       setLoading(false);
     }
   };
-
-  /* --------------------------- Button State --------------------------- */
 
   let label = "Vote";
   let disabled = false;

@@ -6,7 +6,7 @@ import TownhallRecording from "@/models/townhallRecording";
 
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // ✅ updated type
+  context: { params: Promise<{ id: string }> } 
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function PUT(
 
     await dbConnect();
 
-    const { id } = await context.params; // ✅ await params
+    const { id } = await context.params; 
 
     const recording = await TownhallRecording.findByIdAndUpdate(
       id,
@@ -50,7 +50,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // ✅ updated type
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);

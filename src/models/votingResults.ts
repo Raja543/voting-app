@@ -10,7 +10,7 @@ export interface IVotingResult {
   authorName: string;
   totalVotes: number;
   rank: number;
-  votingPeriod: string; // e.g., "August 2024"
+  votingPeriod: string; 
   createdAt: Date;
 }
 
@@ -29,7 +29,7 @@ const votingResultSchema = new Schema(
   { timestamps: true }
 );
 
-// Index for efficient querying by voting period
+
 votingResultSchema.index({ votingPeriod: 1, rank: 1 });
 
 const VotingResult = models.VotingResult || mongoose.model("VotingResult", votingResultSchema);

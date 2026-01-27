@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 
 export default function VotingCountdown() {
@@ -37,11 +36,7 @@ export default function VotingCountdown() {
     const i = setInterval(update, 60000);
     return () => clearInterval(i);
   }, []);
-
-  // While we are still loading the status, don't show anything.
   if (isVotingActive === null) return null;
-
-  // Explicit closed state when voting is not live.
   if (!isVotingActive) {
     return (
       <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-400">

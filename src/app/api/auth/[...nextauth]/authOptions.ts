@@ -126,9 +126,6 @@ const authOptions: NextAuthOptions = {
       }
     },
     async jwt({ token, user, account }) {
-      // On the initial sign-in, we have access to `user` and `account`.
-      // Use them to look up our Mongo user and hydrate the JWT. On
-      // subsequent calls only `token` is present and already hydrated.
       if (user && account) {
         await dbConnect();
 
@@ -137,9 +134,6 @@ const authOptions: NextAuthOptions = {
         if (user.email) {
           dbUser = await User.findOne({ email: user.email.toLowerCase() });
         }
-
-        // For Twitter, email is often missing; fall back to provider +
-        // providerId to find the user we created in the signIn callback.
         if (!dbUser && account.provider && user.id) {
           dbUser = await User.findOne({
             provider: account.provider,

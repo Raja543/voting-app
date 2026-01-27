@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { dbConnect } from "@/lib/mongodb";
 import VotingResult from "@/models/votingResults";
 import { authOptions } from "../auth/[...nextauth]/authOptions";
@@ -12,11 +11,10 @@ export async function GET() {
     // Get distinct voting periods (accessible to all authenticated users)
     const periods = await VotingResult.distinct("votingPeriod");
     
-    console.log("Found voting periods:", periods); // Debug log
+    console.log("Found voting periods:", periods);
     
     // Sort periods in descending order (most recent first)
     const sortedPeriods = periods.sort((a, b) => {
-      // Simple string comparison - you might want to parse dates for better sorting
       return b.localeCompare(a);
     });
 

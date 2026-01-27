@@ -18,16 +18,12 @@ interface User {
   username?: string;
   bio?: string;
   walletAddress?: string;
-  website?: string;
-  location?: string;
-  image?: string;
   provider: string;
   isAdmin: boolean;
   isWhitelisted: boolean;
   socialLinks?: {
     twitter?: string;
-    github?: string;
-    linkedin?: string;
+    youtube?: string;
     discord?: string;
   };
 }
@@ -72,7 +68,8 @@ interface ContentSubmission {
   status: "pending" | "approved" | "rejected";
   adminNotes?: string;
   impressions?: number;
-  createdAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export function useAdminData() {

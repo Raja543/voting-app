@@ -1,6 +1,5 @@
 import dynamic from "next/dynamic";
 
-// Lazy load Postlist component with loading fallback
 const Postlist = dynamic(() => import("@/components/Postlist"), {
   ssr: true,
   loading: () => (

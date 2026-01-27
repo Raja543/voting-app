@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 
-/* ---------------- TYPES ---------------- */
-
 interface VotingResult {
   _id: string;
   title: string;
@@ -15,11 +13,9 @@ interface VotingResult {
   votingPeriod: string;
 }
 
-/* ---------------- CONSTANTS ---------------- */
-
 const MONTH_LABELS = [
-  "JAN","FEB","MAR","APR","MAY","JUN",
-  "JUL","AUG","SEP","OCT","NOV","DEC",
+  "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
 ];
 
 const MONTH_NAME_MAP: Record<string, number> = {
@@ -37,15 +33,11 @@ const MONTH_NAME_MAP: Record<string, number> = {
   december: 11, dec: 11,
 };
 
-/* ---------------- PAGE ---------------- */
-
 export default function ResultsPage() {
   const [periods, setPeriods] = useState<string[]>([]);
   const [activePeriod, setActivePeriod] = useState("");
   const [results, setResults] = useState<VotingResult[]>([]);
   const [loading, setLoading] = useState(false);
-
-  /* ---------------- FETCH PERIODS ---------------- */
 
   useEffect(() => {
     fetch("/api/voting-periods")
@@ -56,8 +48,6 @@ export default function ResultsPage() {
       });
   }, []);
 
-  /* ---------------- FETCH RESULTS ---------------- */
-
   useEffect(() => {
     if (!activePeriod) return;
 
@@ -67,8 +57,6 @@ export default function ResultsPage() {
       .then((data) => setResults(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));
   }, [activePeriod]);
-
-  /* ---------------- YEAR / MONTH MAP ---------------- */
 
   const yearMap = useMemo(() => {
     const map: Record<string, Set<number>> = {};
@@ -94,7 +82,7 @@ export default function ResultsPage() {
   const isActive = (year: string, idx: number) =>
     activePeriod.toLowerCase().includes(year) &&
     MONTH_NAME_MAP[
-      activePeriod.split(" ").slice(0, -1).join(" ").toLowerCase()
+    activePeriod.split(" ").slice(0, -1).join(" ").toLowerCase()
     ] === idx;
 
   const hasData = (year: string, idx: number) =>
@@ -142,10 +130,9 @@ export default function ResultsPage() {
                         }
                         className={`
                           text-xs py-1 border
-                          ${
-                            active
-                              ? "bg-white text-black border-white"
-                              : available
+                          ${active
+                            ? "bg-white text-black border-white"
+                            : available
                               ? "bg-[#0b0f14] text-white/70 border-gray-700 hover:border-gray-500"
                               : "bg-[#0b0f14] text-white/30 border-gray-800"
                           }

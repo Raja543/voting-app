@@ -52,8 +52,6 @@ export async function POST(req: Request) {
     // Get author information for each post
     const resultsWithAuthors = await Promise.all(
       sortedPosts.map(async (post, index) => {
-        // For now, we'll use a placeholder author since posts don't have author info
-        // In a real app, you'd want to add author field to posts
         const authorEmail = "unknown@example.com";
         const authorName = "Unknown Author";
         
@@ -104,9 +102,6 @@ export async function GET(req: Request) {
     if (!votingPeriodParam) {
       return NextResponse.json({ error: "Voting period is required" }, { status: 400 });
     }
-
-    // Normalize the incoming period (trim and collapse inner spaces) so that
-    // minor formatting differences don't prevent matches with stored values.
     const normalizedPeriod = votingPeriodParam.trim().replace(/\s+/g, " ");
 
     const escapeRegex = (value: string) =>
@@ -127,10 +122,6 @@ export async function GET(req: Request) {
       .select(
         "postId title description link authorEmail authorName totalVotes rank votingPeriod createdAt"
       );
-
-    // Fallback: if no precomputed VotingResult documents exist for this period,
-    // compute results on the fly from posts + votes so users can still see
-    // outcomes for that month.
     if (!results || results.length === 0) {
       const posts = await Post.find({
         votingPeriod: { $regex: periodRegex },

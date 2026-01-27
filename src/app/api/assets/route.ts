@@ -20,13 +20,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     const contentType = request.headers.get("content-type") || "";
-
     let title: string | null = null;
     let description: string | null = null;
     let type: string | null = null;

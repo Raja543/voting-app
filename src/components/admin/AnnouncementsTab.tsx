@@ -154,8 +154,6 @@ export default function AnnouncementsTab({
                         className="text-[#3aa0d8] text-sm sm:text-xl font-medium break-words break-all sm:break-words max-w-full ">
                         {a.title}
                       </h3>
-
-
                       <span
                         className="text-[11px] px-2 py-[2px] font-medium whitespace-nowrap"
                         style={{
@@ -180,15 +178,7 @@ export default function AnnouncementsTab({
                   <div className="flex sm:items-start">
                     <button
                       onClick={() => deleteAnnouncement(a._id)}
-                      className="
-                        bg-[#E40041] hover:bg-[#B0003A]
-                        text-xs
-                        px-3 py-1
-                        text-white
-                        h-fit
-                        w-fit
-                      "
-                    >
+                      className=" bg-[#E40041] hover:bg-[#B0003A] text-xs px-3 py-1 text-white h-fit w-fit ">
                       Remove
                     </button>
                   </div>

@@ -7,27 +7,19 @@ import ContentSubmission from "@/models/contentSubmission";
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     await dbConnect();
-    
     const scope = request.nextUrl.searchParams.get("scope");
-
-    // If admin, return all submissions by default. If regular user, return
-    // only their submissions. Admins can pass ?scope=self to see only their
-    // own submissions (used by the public "Submitted posts" page).
     let filter: Record<string, unknown> = {};
     if (session.user.isAdmin && scope === "self") {
       filter = { submittedBy: session.user.id || session.user.email };
     } else if (!session.user.isAdmin) {
       filter = { submittedBy: session.user.id || session.user.email };
     }
-
     const submissions = await ContentSubmission.find(filter).sort({ createdAt: -1 });
-    
     return NextResponse.json(submissions);
   } catch (error) {
     console.error("Error fetching content submissions:", error);
@@ -38,17 +30,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     const { twitterHandle, discordUsername, contentLink, contentType, title, description } = await request.json();
-
     if (!twitterHandle || !discordUsername || !contentLink || !contentType) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-
     await dbConnect();
     const submission = new ContentSubmission({
       twitterHandle,
@@ -59,7 +47,6 @@ export async function POST(request: NextRequest) {
       description,
       submittedBy: session.user.id || session.user.email,
     });
-
     await submission.save();
     return NextResponse.json(submission);
   } catch (error) {

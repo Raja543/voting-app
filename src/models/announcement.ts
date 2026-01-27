@@ -5,7 +5,7 @@ export interface IAnnouncement extends Document {
   content: string;
   priority: "CRITICAL" | "GENERAL" | "CONTENT_FOCUS";
   isActive: boolean;
-  createdBy: string; // Admin user ID
+  createdBy: string; 
   createdAt: Date;
   updatedAt: Date;
 }

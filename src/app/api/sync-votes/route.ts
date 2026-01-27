@@ -5,7 +5,6 @@ import Vote from "@/models/vote";
 import Post from "@/models/post";
 import { authOptions } from "../auth/[...nextauth]/authOptions";
 
-// ✅ Sync all post vote counts with actual Vote collection data (Admin only)
 export async function POST() {
   await dbConnect();
   
@@ -14,17 +13,11 @@ export async function POST() {
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
-
-    // Get all posts
     const posts = await Post.find();
-    
-    // Sync vote counts for each post
     const syncResults = await Promise.all(
       posts.map(async (post) => {
         const actualVoteCount = await Vote.countDocuments({ postId: post._id.toString() });
-        
         await Post.findByIdAndUpdate(post._id, { votes: actualVoteCount });
-        
         return {
           postId: post._id,
           title: post.title,

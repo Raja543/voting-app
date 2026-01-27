@@ -7,16 +7,17 @@ export interface SessionUser {
   email: string;
   name: string;
   username?: string;
-  image?: string;
+  bio?: string;
+  abstractWallet?: string;
+  evmWallet?: string; 
   isAdmin: boolean;
   isWhitelisted: boolean;
   isEmailVerified: boolean;
   provider: string;
 }
 
-
 const JWT_SECRET = process.env.JWT_SECRET;
-const SESSION_DURATION = 30 * 24 * 60 * 60; // 30 days in seconds
+const SESSION_DURATION = 30 * 24 * 60 * 60; 
 
 
 export function createSession(user: SessionUser): string {
@@ -27,7 +28,6 @@ export function createSession(user: SessionUser): string {
     audience: 'voting-app-users',
   });
 }
-
 
 export function verifySession(token: string): SessionUser | null {
   if (!JWT_SECRET) {
@@ -46,14 +46,11 @@ export function verifySession(token: string): SessionUser | null {
   }
 }
 
-
 export function getSessionFromRequest(request: NextRequest): SessionUser | null {
   const token = request.cookies?.get?.('auth-token')?.value;
   if (!token) return null;
   return verifySession(token);
 }
-
-
 
 export async function getServerSession(): Promise<SessionUser | null> {
   try {
@@ -66,7 +63,6 @@ export async function getServerSession(): Promise<SessionUser | null> {
     return null;
   }
 }
-
 
 export function createSecureCookie(token: string) {
   return {

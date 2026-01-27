@@ -28,9 +28,9 @@ interface AssetsTabProps {
   addAsset: (e: React.FormEvent<HTMLFormElement>) => void;
   assetFiles: File[];
   setAssetFiles: (files: File[]) => void;
-  deleteAsset?: (id: string) => void | Promise<void>; // optional delete handler
-  assetSearch?: string; // optional search string
-  setAssetSearch?: (value: string) => void; // optional search setter
+  deleteAsset?: (id: string) => void | Promise<void>;
+  assetSearch?: string;
+  setAssetSearch?: (value: string) => void;
 }
 
 export default function AssetsTab({
@@ -43,7 +43,6 @@ export default function AssetsTab({
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [previewUrls, setPreviewUrls] = React.useState<string[]>([]);
 
-  // Create/revoke blob URLs only when assetFiles changes
   React.useEffect(() => {
     if (!assetFiles || assetFiles.length === 0) {
       setPreviewUrls([]);
@@ -82,11 +81,9 @@ export default function AssetsTab({
         />
       </div>
 
-      {/* Main Content */}
+      {/* Upload Form */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-        {/* LEFT  Preview Area */}
         <div className="lg:col-span-2 bg-[#0b0f14] border border-gray-800 flex flex-col min-h-[220px] lg:min-h-[360px]">
-          {/* Preview */}
           <div className="flex-1 flex items-center justify-center text-gray-600 text-sm">
             {assetFiles && assetFiles.length > 0 ? (
               <span className="text-xs text-gray-300 break-all px-3 text-center">
@@ -103,40 +100,36 @@ export default function AssetsTab({
           <div className="grid grid-cols-5 gap-2 p-2 border-t border-gray-800 overflow-x-auto">
             {assetFiles && assetFiles.length > 0
               ? assetFiles.slice(0, 10).map((file, i) => {
-                  const isImage = file.type.startsWith("image/");
-                  const url = previewUrls[i];
-                  return (
-                    <div
-                      key={i}
-                      className="h-14 bg-[#11161c] border border-gray-800 flex items-center justify-center overflow-hidden"
-                    >
-                      {isImage && url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={url}
-                          alt={file.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-[10px] text-gray-300 px-1 truncate">
-                          {file.name}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })
-              : Array.from({ length: 5 }).map((_, i) => (
+                const isImage = file.type.startsWith("image/");
+                const url = previewUrls[i];
+                return (
                   <div
                     key={i}
-                    className="h-14 bg-[#11161c] border border-gray-800"
-                  />
-                ))}
+                    className="h-14 bg-[#11161c] border border-gray-800 flex items-center justify-center overflow-hidden"
+                  >
+                    {isImage && url ? (
+                      <img
+                        src={url}
+                        alt={file.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[10px] text-gray-300 px-1 truncate">
+                        {file.name}
+                      </span>
+                    )}
+                  </div>
+                );
+              })
+              : Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-14 bg-[#11161c] border border-gray-800"
+                />
+              ))}
           </div>
         </div>
-
-        {/* RIGHT  Metadata */}
         <div className="space-y-6">
-          {/* Category (for organizing assets) */}
           <div>
             <label className="block text-[#3aa0d8] text-sm mb-2">
               Category
@@ -191,7 +184,7 @@ export default function AssetsTab({
             />
           </div>
 
-          {/* File input (hidden, triggered by header icon) */}
+          {/* File input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -201,22 +194,13 @@ export default function AssetsTab({
             className="hidden"
           />
 
-          {/* Hidden link (kept for logic consistency) */}
+          {/* Hidden link input */}
           <input type="hidden" value={newAsset.gdriveLink} />
 
           {/* Submit */}
           <button
             type="submit"
-            className="
-              w-full
-              bg-[#10B981]
-              hover:bg-[#059669]
-              text-white
-              py-2
-              text-sm
-              font-medium
-            "
-          >
+            className="w-full bg-[#10B981] hover:bg-[#059669] text-white py-2 text-sm font-medium">
             Upload Asset
           </button>
         </div>

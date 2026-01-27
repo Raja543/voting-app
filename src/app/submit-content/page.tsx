@@ -23,8 +23,6 @@ export default function SubmitContentPage() {
     contentLink: "",
     contentType: "",
   });
-
-  /* While session is loading, avoid flicker */
   if (status === "loading") return null;
 
   const handleChange = (
@@ -83,7 +81,6 @@ export default function SubmitContentPage() {
 
       <div className="min-h-screen bg-[#0b0f14] flex justify-center px-4">
         <div className="w-full max-w-3xl py-10">
-          {/* Guidelines */}
           <div className="mb-6">
             <span className="inline-block bg-[#10B981]/20 text-[#10B981] px-3 py-1 text-xs font-medium">
               SUBMISSION GUIDELINES

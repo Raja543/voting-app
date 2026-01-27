@@ -34,7 +34,6 @@ export async function POST(request: NextRequest) {
       title,
       description,
       gdriveLink,
-      // Explicitly set recordingDate to now to satisfy required validation
       recordingDate: new Date(),
     });
 

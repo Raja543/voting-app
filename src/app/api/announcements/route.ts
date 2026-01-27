@@ -12,7 +12,6 @@ export async function GET() {
       .lean();
 
     const res = NextResponse.json(announcements);
-    // Short server-side cache to improve TTFB without making content stale
     res.headers.set(
       "Cache-Control",
       "public, s-maxage=30, stale-while-revalidate=60"
@@ -28,11 +27,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { title, content, priority } = await request.json();
-
     if (!title || !content) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-
     await dbConnect();
     const session = await getServerSession(authOptions);
     const createdBy = session?.user?.id || session?.user?.email || "system";
@@ -42,7 +39,6 @@ export async function POST(request: NextRequest) {
       priority: (priority as "CRITICAL" | "GENERAL" | "CONTENT_FOCUS") || "GENERAL",
       createdBy,
     });
-
     await announcement.save();
     return NextResponse.json(announcement);
   } catch (error) {

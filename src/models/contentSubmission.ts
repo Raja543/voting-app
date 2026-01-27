@@ -7,7 +7,7 @@ export interface IContentSubmission extends Document {
   contentType: "short-form" | "thread" | "video" | "infographics" | "artwork" | "stream-clip";
   title?: string;
   description?: string;
-  submittedBy: string; // User ID
+  submittedBy: string; 
   status: "pending" | "approved" | "rejected";
   adminNotes?: string;
   impressions?: number;

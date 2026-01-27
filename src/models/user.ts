@@ -8,29 +8,19 @@ interface IUser extends Document {
   password?: string;
   username?: string;
   bio?: string;
-  walletAddress?: string;
-  website?: string;
-  location?: string;
-  image?: string;
+  abstractWallet?: string;
+  evmWallet?: string;
   provider: 'credentials' | 'google' | 'twitter';
   providerId?: string;
   isAdmin: boolean;
   isWhitelisted: boolean;
   isEmailVerified: boolean;
   votedPosts: string[];
-  twoFactorEnabled: boolean;
-  twoFactorSecret?: string;
-  backupCodes: string[];
   lastLogin?: Date;
-  passwordResetToken?: string;
-  passwordResetExpires?: Date;
-  emailVerificationToken?: string;
-  emailVerificationExpires?: Date;
   socialLinks?: {
     twitter?: string;
-    github?: string;
-    linkedin?: string;
     discord?: string;
+    youtube?: string;
   };
 }
 
@@ -46,13 +36,8 @@ const userSchema = new Schema({
     match: [/^[a-zA-Z0-9_]{3,20}$/, 'Username must be 3-20 characters']
   },
   bio: { type: String, maxlength: 500, trim: true },
-  walletAddress: { 
-    type: String,
-    match: [/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum wallet address']
-  },
-  website: { type: String, trim: true },
-  location: { type: String, maxlength: 100, trim: true },
-  image: { type: String },
+  abstractWallet: { type: String },
+  evmWallet: { type: String },
   provider: { 
     type: String, 
     enum: ['credentials', 'google', 'twitter'], 
@@ -63,19 +48,11 @@ const userSchema = new Schema({
   isWhitelisted: { type: Boolean, default: false },
   isEmailVerified: { type: Boolean, default: false },
   votedPosts: [{ type: String }],
-  twoFactorEnabled: { type: Boolean, default: false },
-  twoFactorSecret: { type: String },
-  backupCodes: [{ type: String }],
   lastLogin: { type: Date },
-  passwordResetToken: { type: String },
-  passwordResetExpires: { type: Date },
-  emailVerificationToken: { type: String },
-  emailVerificationExpires: { type: Date },
   socialLinks: {
     twitter: { type: String },
-    github: { type: String },
-    linkedin: { type: String },
-    discord: { type: String }
+    discord: { type: String },
+    youtube: { type: String }
   }
 }, {
   timestamps: true

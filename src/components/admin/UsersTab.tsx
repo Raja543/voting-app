@@ -35,8 +35,6 @@ export default function UsersTab({
 
   return (
     <div className="bg-[#11161c] border border-gray-800 overflow-x-hidden">
-
-      {/* Header */}
       <div className="p-4 border-b border-gray-800">
         <h2 className="text-[#3aa0d8] text-xs sm:text-sm mb-2">
           Users
@@ -45,15 +43,7 @@ export default function UsersTab({
           placeholder="Search users"
           value={userSearch}
           onChange={(e) => setUserSearch(e.target.value)}
-          className="
-            w-full
-            bg-[#0b0f14]
-            px-3 py-2
-            text-xs sm:text-sm
-            text-white
-            border border-gray-700
-            focus:outline-none
-          "
+          className="w-full bg-[#0b0f14] px-3 py-2 text-xs sm:text-sm text-white border border-gray-700 focus:outline-none"
         />
       </div>
 
@@ -62,22 +52,9 @@ export default function UsersTab({
         {filteredUsers.map((user) => (
           <div
             key={user._id}
-            className="
-              p-4
-              grid
-              grid-cols-[3fr_1fr]
-              md:flex
-              md:items-center
-              md:justify-between
-              gap-4
-            "
-          >
-            {/* LEFT — User Info (3/4 on mobile) */}
+            className="p-4 grid grid-cols-[3fr_1fr] md:flex md:items-center md:justify-between gap-4">
             <div className="flex gap-4 min-w-0">
-              {/* Avatar */}
               <div className="w-16 h-16 bg-gray-500 shrink-0" />
-
-              {/* Info */}
               <div className="min-w-0">
                 <div className="text-white text-sm sm:text-base font-medium break-words">
                   {user.name}
@@ -86,8 +63,6 @@ export default function UsersTab({
                 <div className="text-gray-400 text-xs sm:text-sm break-all">
                   {user.email}
                 </div>
-
-                {/* Tags */}
                 <div className="flex flex-wrap gap-2 mt-1">
                   {user.isAdmin && (
                     <span className="bg-[#027DA4] text-white text-[10px] sm:text-xs px-2 py-[2px]">
@@ -102,28 +77,11 @@ export default function UsersTab({
                 </div>
               </div>
             </div>
-
-            {/* RIGHT — Actions */}
             <div
-              className="
-                flex
-                flex-col
-                gap-2
-                md:flex-row
-                md:gap-3
-                md:items-center
-                md:justify-end
-              "
-            >
+              className="flex flex-col gap-2 md:flex-row md:gap-3 md:items-center md:justify-end">
               <button
                 onClick={() => viewUserDetails(user)}
-                className="
-                  bg-[#027DA4] hover:bg-[#016381]
-                  text-white
-                  text-[10px] sm:text-xs md:text-sm
-                  px-4 py-1
-                "
-              >
+                className="bg-[#027DA4] hover:bg-[#016381] text-white text-[10px] sm:text-xs md:text-sm px-4 py-1">
                 Details
               </button>
 
@@ -133,13 +91,7 @@ export default function UsersTab({
                     ? removeWhitelist(user.email)
                     : whitelistUser(user.email)
                 }
-                className="
-                  bg-[#E40041] hover:bg-[#B0003A]
-                  text-white
-                  text-[10px] sm:text-xs md:text-sm
-                  px-4 py-1
-                "
-              >
+                className="bg-[#E40041] hover:bg-[#B0003A] text-white text-[10px] sm:text-xs md:text-sm px-4 py-1">
                 {user.isWhitelisted ? "Remove" : "Whitelist"}
               </button>
             </div>

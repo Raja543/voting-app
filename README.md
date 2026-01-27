@@ -97,19 +97,7 @@ A full-featured voting platform built with Next.js, NextAuth, MongoDB, and Tailw
    npm run build
    npm start
    ```
-
----
-
-## Folder Structure
-
-- `src/app/` — App directory (Next.js routes, layouts, pages, API routes)
-- `src/components/` — React components (UI, admin, shared)
-- `src/models/` — Mongoose models for MongoDB collections
-- `src/lib/` — Utility libraries (MFA, session, MongoDB connection)
-- `src/styles/` — Global CSS (Tailwind)
-- `src/types/` — TypeScript types
-
----
+   
 
 ## API Endpoints
 
@@ -136,12 +124,3 @@ A full-featured voting platform built with Next.js, NextAuth, MongoDB, and Tailw
 - PostCSS & Autoprefixer
 - TypeScript
 
----
-
-## Contributing
-Pull requests are welcome! Please open an issue first to discuss any major changes.
-
----
-
-## License
-MIT

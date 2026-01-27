@@ -7,8 +7,6 @@ function getIdFromRequest(request: NextRequest) {
   return url.pathname.split("/").pop();
 }
 
-/* ------------------------------- UPDATE ------------------------------- */
-
 export async function PUT(request: NextRequest) {
   try {
     const id = getIdFromRequest(request);
@@ -66,7 +64,6 @@ export async function DELETE(request: NextRequest) {
         { status: 404 }
       );
     }
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting announcement:", error);

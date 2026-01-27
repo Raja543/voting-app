@@ -14,8 +14,6 @@ interface Post {
   link?: string;
 }
 
-/* ----------------------------- Post Card ----------------------------- */
-
 const PostCard = memo(function PostCard({
   post,
   hasVoted,
@@ -29,7 +27,6 @@ const PostCard = memo(function PostCard({
 }) {
   return (
     <div className="bg-[#161B22] border border-[#1f2933] p-4 flex flex-col min-h-[170px]">
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-medium text-[#027DA4] truncate">
           {post.title}
@@ -38,10 +35,7 @@ const PostCard = memo(function PostCard({
           {post.description}
         </p>
       </div>
-
-      {/* Actions */}
       <div className="mt-4 flex flex-wrap items-center gap-2 justify-between">
-        {/* POST */}
         {post.link ? (
           <a
             href={post.link}
@@ -56,8 +50,6 @@ const PostCard = memo(function PostCard({
             ✕ POST
           </span>
         )}
-
-        {/* VOTE */}
         <div className="shrink-0">
           <VoteButton
             postId={post._id}
@@ -70,8 +62,6 @@ const PostCard = memo(function PostCard({
     </div>
   );
 });
-
-/* ----------------------------- Main Page ----------------------------- */
 
 const Postlist = memo(function Postlist() {
   const { data: session, status } = useSession();
@@ -125,7 +115,6 @@ const Postlist = memo(function Postlist() {
 
   const memoizedPosts = useMemo(() => posts, [posts]);
 
-  // Compute previous month label from currentPeriod (e.g. "December 2025" -> "November 2025")
   const previousPeriod = useMemo(() => {
     if (!currentPeriod) return null;
 
@@ -172,7 +161,6 @@ const Postlist = memo(function Postlist() {
 
       <div className="min-h-screen bg-[#0b0f14] text-gray-100 px-4 py-6">
         <div className="mx-auto max-w-[1600px]">
-          {/* Header */}
           <div className="mb-6 text-center space-y-3">
             {isVotingActive && (
               <div className="flex flex-wrap items-center justify-center gap-2 text-base sm:text-lg font-semibold">
@@ -186,8 +174,6 @@ const Postlist = memo(function Postlist() {
             )}
             <VotingCountdown />
           </div>
-
-          {/* Skeleton while loading and voting is live */}
           {loading && isVotingActive && (
             <div
               className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
@@ -212,7 +198,6 @@ const Postlist = memo(function Postlist() {
             </div>
           )}
 
-          {/* Grid when voting is live */}
           {!loading && isVotingActive && (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {memoizedPosts.map((post) => (
@@ -226,8 +211,6 @@ const Postlist = memo(function Postlist() {
               ))}
             </div>
           )}
-
-          {/* Message when voting is not live */}
           {!loading && !isVotingActive && (
             <div className="mt-10 max-w-xl mx-auto text-center border border-[#1f2933] bg-[#11161c] px-6 py-6">
               <h2 className="text-lg font-semibold text-white mb-2">
@@ -254,8 +237,6 @@ const Postlist = memo(function Postlist() {
               </div>
             </div>
           )}
-
-          {/* Footer Hint when voting is live */}
           {session?.user?.email && !session.user.isAdmin && isVotingActive && (
             <div className="mt-8 text-center text-xs text-gray-500">
               You can vote for up to{" "}

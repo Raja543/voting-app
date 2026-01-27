@@ -6,7 +6,7 @@ import Asset from "@/models/asset";
 
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } 
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,13 +14,9 @@ export async function PUT(
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     const { title, description, gdriveLink, type, category } = await request.json();
-
     await dbConnect();
-
     const { id } = await context.params;
-
     const asset = await Asset.findByIdAndUpdate(
       id,
       { title, description, gdriveLink, type, category },
@@ -30,7 +26,6 @@ export async function PUT(
     if (!asset) {
       return NextResponse.json({ error: "Asset not found" }, { status: 404 });
     }
-
     return NextResponse.json(asset);
   } catch (error) {
     console.error("Error updating asset:", error);
@@ -40,25 +35,19 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } 
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     await dbConnect();
-
     const { id } = await context.params;
-
     const asset = await Asset.findByIdAndDelete(id);
-
     if (!asset) {
       return NextResponse.json({ error: "Asset not found" }, { status: 404 });
     }
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting asset:", error);

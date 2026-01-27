@@ -20,7 +20,6 @@ export default function AnnouncementsPage() {
   const [readIds, setReadIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------- LOAD READ STATE ---------------- */
   useEffect(() => {
     const stored = localStorage.getItem(READ_KEY);
     if (stored) {
@@ -31,8 +30,6 @@ export default function AnnouncementsPage() {
       }
     }
   }, []);
-
-  /* ---------------- FETCH ANNOUNCEMENTS ---------------- */
   useEffect(() => {
     setLoading(true);
     fetch("/api/announcements")
@@ -42,7 +39,6 @@ export default function AnnouncementsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  /* ---------------- PRIORITY STYLES ---------------- */
   const priorityStyles: Record<
     Announcement["priority"],
     { label: string; text: string; bg: string }
@@ -73,7 +69,6 @@ export default function AnnouncementsPage() {
       minute: "2-digit",
     });
 
-  /* ---------------- MARK AS READ ---------------- */
   const markAsRead = (id: string) => {
     if (readIds.includes(id)) return;
 

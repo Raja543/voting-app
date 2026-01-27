@@ -62,7 +62,7 @@ export async function POST() {
 
     const impressionsByTweetId: Record<string, number> = {};
 
-    // Twitter API v2 allows up to 100 IDs per request
+    // Twitter API
     const batchSize = 100;
     for (let i = 0; i < tweetIds.length; i += batchSize) {
       const batch = tweetIds.slice(i, i + batchSize);

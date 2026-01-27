@@ -4,12 +4,18 @@ import React, { useMemo, useState } from "react";
 
 interface ContentSubmission {
   _id: string;
-  twitterHandle?: string;
-  discordUsername?: string;
+  twitterHandle: string;
+  discordUsername: string;
   contentLink: string;
-  contentType?: string;
-  createdAt?: string;
+  contentType: "short-form" | "thread" | "video" | "infographics" | "artwork" | "stream-clip";
+  title?: string;
+  description?: string;
+  submittedBy: string;
+  status: "pending" | "approved" | "rejected";
+  adminNotes?: string;
   impressions?: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface SubmissionsTabProps {

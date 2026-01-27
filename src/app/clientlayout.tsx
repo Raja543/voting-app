@@ -12,7 +12,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       refetchOnWindowFocus={false}
       refetchWhenOffline={false}
     >
-      {/* Reserve space for the fixed sidebar only on non-auth pages */}
       {isAuthPage ? children : <div className="md:pl-64">{children}</div>}
     </SessionProvider>
   );
